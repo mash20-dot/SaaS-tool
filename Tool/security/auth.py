@@ -1,4 +1,6 @@
 from flask import request, Blueprint, jsonify
+from flask_jwt_extended import create_access_token
+from flask_wtf.csrf import generate_csrf
 from app.models import User, db
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
@@ -16,6 +18,7 @@ def signup():
         data = request.get_json()
         firstname = data.get("firstname")
         lastname = data.get("lastname")
+        business_name = data.get("business_name")
         email = data.get("email")
         phone = data.get("phone")
         location = data.get("location")
@@ -37,6 +40,8 @@ def signup():
             Missing_fields.append("location")
         if not password:
             Missing_fields.append("password")
+        if not business_name:
+            Missing_fields.append("business_name")
             if Missing_fields:
                 return jsonify({"message":
                  f"{Missing_fields} required"}), 400
@@ -57,6 +62,7 @@ def signup():
         save_user = User(
             firstname=firstname,
             lastname=lastname,
+            business_name=business_name,
             email=email,
             phone=phone,
             location=location,
@@ -75,3 +81,40 @@ def signup():
             "message":
             f"signup failed {str(e)}"
     }), 500
+
+
+@security.route('/login', methods=['POST'])
+def login():
+
+    try:
+        data = request.get_json()
+        email = data.get("email")
+        password = data.get("password")
+
+        if not email or not password:
+            return jsonify({"message":
+            "email and password required"}), 400
+        
+        existing_user = User.query.filter_by(email=email).first()
+        if not existing_user or not check_password_hash(existing_user.password, password):
+            return jsonify({"message":
+            "Invalid email or password"}), 400
+        
+        access_token = create_access_token(identity=email)
+        csrf_token = generate_csrf()
+
+        return jsonify({"message":
+                "logged in successfully",
+                "access_token": access_token,
+                "csrf_token": csrf_token,
+                "business_name": existing_user.business_name
+
+        }), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message":
+                f"login failed, {str(e)}"
+    }), 500
+        
+        
