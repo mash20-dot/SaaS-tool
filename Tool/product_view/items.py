@@ -5,6 +5,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 
 product_view = Blueprint('product_view', '__name__')
 
+#route to post products
 @product_view.route('/start', methods=['POST'])
 @jwt_required()
 def start():
@@ -16,6 +17,7 @@ def start():
         return jsonify({"message":
                 "user not found"
     }), 400
+
 
     data = request.get_json()
     product_name = data.get("product_name")
@@ -45,7 +47,8 @@ def start():
         sellinga_price=selling_price,
         initial_stock=initial_stock,
         expiration_date=expiration_date,
-        supplier_info=supplier_info
+        supplier_info=supplier_info,
+        user_id=current_user.id
     )
     db.session.add(save_pro)
     db.session.commit()
@@ -54,6 +57,7 @@ def start():
                     
     }), 200
 
+#route to get all products
 @product_view.route('/get_products', methods=['GET'])
 @jwt_required()
 def get_products():
@@ -78,7 +82,8 @@ def get_products():
 
         }), 200
         return jsonify(pro)
-    
+
+ #route to filter product   
 @product_view.route('/filter', methods=['GET'])
 @jwt_required()
 def filter():
@@ -108,7 +113,8 @@ def filter():
             "expiration_date":me.expiration_date,
             "supplier_info":me.supplier_info
     }), 200
-        
+
+#route to update product        
 @product_view.route('/product/<int:product_id>', methods=['PUT'])
 @jwt_required()
 def update_product(product_id):
@@ -169,3 +175,4 @@ def update_product(product_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": f"Update failed: {str(e)}"}), 500
+    
