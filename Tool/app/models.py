@@ -1,4 +1,5 @@
 from db import db
+from datetime import datetime
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -10,6 +11,7 @@ class User(db.Model):
     location = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(400), nullable=False)
     products = db.relationship('Product', backref='user', lazy=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 
@@ -21,3 +23,4 @@ class Product(db.Model):
     expiration_date = db.Column(db.String(250), nullable=False)
     supplier_info = db.Column(db.String(1000))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)

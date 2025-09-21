@@ -78,3 +78,33 @@ def get_products():
 
         }), 200
         return jsonify(pro)
+    
+@product_view.route('/filter', methods=['GET'])
+@jwt_required()
+def filter():
+
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(email=current_email).first()
+    if not current_user:
+        return jsonify({"message":
+            "user not found"
+    }), 400
+
+    data = request.get_json()
+    product_name = data.get("product_name")
+
+    filter_pro = Product.query.filter_by(product_name=product_name).first()
+    if not filter_pro:
+        return jsonify({"message":
+            "product not found"
+    }), 400
+
+    pro = []
+    for me in filter_pro:
+        pro.append({
+            "product_name":me.product_name,
+            "selling_price": me.selling_price,
+            "initial_stock":me.initial_stock,
+            "expiration_date":me.expiration_date,
+            "supplier_info":me.supplier_info
+    }), 200
