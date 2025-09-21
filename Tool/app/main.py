@@ -21,6 +21,8 @@ pymysql.install_as_MySQLdb()
 
 app = Flask(__name__)
 
+
+
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 #setting up MySQL connection

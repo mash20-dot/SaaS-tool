@@ -4,6 +4,7 @@ from flask_wtf.csrf import generate_csrf
 from app.models import User, db
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
+#from utils_logger import app_logger
 
 security = Blueprint('security', '__name__')
 
@@ -13,7 +14,7 @@ EMAIL_REGEX = r'^[\w\.-]+@[\w\.-]+\.\w+$'
 
 @security.route('/signup', methods=['POST'])
 def signup():
-
+     
     try:
         data = request.get_json()
         firstname = data.get("firstname")
@@ -90,16 +91,24 @@ def login():
         data = request.get_json()
         email = data.get("email")
         password = data.get("password")
-
+       
+        # Log the login attempt
+        #app_logger.log_auth_attempt(email, request.remote_addr)
+    
         if not email or not password:
             return jsonify({"message":
             "email and password required"}), 400
         
         existing_user = User.query.filter_by(email=email).first()
+        #app_logger.log_auth_failure(email, "Wrong password")
+        #app_logger.log_security_event("multiple_failed_attempts", f"user: {email}")
         if not existing_user or not check_password_hash(existing_user.password, password):
             return jsonify({"message":
             "Invalid email or password"}), 400
         
+        # Success!
+        #app_logger.log_auth_success(email, existing_user.business_name)
+
         access_token = create_access_token(identity=email)
         csrf_token = generate_csrf()
 

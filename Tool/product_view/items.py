@@ -1,5 +1,6 @@
 from flask import request, Blueprint, jsonify
 from app.models import db, User, Product
+from datetime import datetime
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 
@@ -175,4 +176,42 @@ def update_product(product_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": f"Update failed: {str(e)}"}), 500
-    
+
+
+@product_view.route('/archive', methods=['POST'])
+@jwt_required()
+def archive(product_id):
+
+    try:
+        current_email = get_jwt_identity()
+        current_user = User.query.filter_by(email=current_email).first()
+
+        if not current_user:
+            return jsonify({"message":
+                "user not found"
+        }), 400
+
+        product = Product.query.get_or_404(product_id)
+        if product.user_id != current_user.id:
+            return jsonify({"message":
+            "Unauthorized "
+        }), 403
+
+        # Archiving the product
+        product.status = 'archived'
+        product.archived_at = datetime.utcnow()
+
+        db.session.commit()
+        return jsonify({"message":
+                        
+            "product archived successfully",
+            "archived_at": product.archived_at.isoformat()
+                
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message":
+        f"product could not be archived {str(e)}"
+    }), 500
+
+            

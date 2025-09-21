@@ -24,3 +24,5 @@ class Product(db.Model):
     supplier_info = db.Column(db.String(1000))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='active')  # 'active', 'archived', 'discontinued'
+    archived_at = db.Column(db.DateTime)  # When it was archived
