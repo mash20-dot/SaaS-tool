@@ -10,6 +10,7 @@ import sys
 sys.path.append('.')
 
 from security.auth import security
+from product_view.items import product_view
 
 
 
@@ -33,6 +34,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 csrf = CSRFProtect(app)
 
 app.register_blueprint(security, url_prefix='/security')
+app.register_blueprint(product_view, url_prefix='/product_view')
 
 from security.auth import signup, login
 csrf.exempt(signup)
@@ -44,16 +46,6 @@ csrf.exempt(login)
 # Initializing extensions
 db.init_app(app)
 jwt = JWTManager(app)
-
-
-
-#SET JWT SECRET KEY
-
-
-
-
-
-
 
 
 
