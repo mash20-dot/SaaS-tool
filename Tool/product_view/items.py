@@ -108,3 +108,64 @@ def filter():
             "expiration_date":me.expiration_date,
             "supplier_info":me.supplier_info
     }), 200
+        
+@product_view.route('/product/<int:product_id>', methods=['PUT'])
+@jwt_required()
+def update_product(product_id):
+    try:
+        current_user_email = get_jwt_identity()
+        current_user = User.query.filter_by(email=current_user_email).first()
+        
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+        
+        product = Product.query.get_or_404(product_id)
+        
+        if product.user_id != current_user.id:
+            return jsonify({"message": "Unauthorized to edit this product"}), 403
+        
+        data = request.get_json()
+        updated_fields = []
+        
+        # Only update fields that are actually provided and not empty
+        if data.get('product_name'):
+            product.product_name = data['product_name']
+            updated_fields.append('product_name')
+            
+        if data.get('selling_price'):
+            product.selling_price = data['selling_price']
+            updated_fields.append('selling_price')
+            
+        if data.get('initial_stock') is not None:  # Allow 0 as valid value
+            product.initial_stock = data['initial_stock']
+            updated_fields.append('initial_stock')
+            
+        if data.get('expiration_date'):
+            product.expiration_date = data['expiration_date']
+            updated_fields.append('expiration_date')
+            
+        if data.get('supplier_info'):
+            product.supplier_info = data['supplier_info']
+            updated_fields.append('supplier_info')
+        
+        if not updated_fields:
+            return jsonify({"message": "No valid fields provided for update"}), 400
+        
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Product updated successfully",
+            "updated_fields": updated_fields,
+            "product": {
+                "id": product.id,
+                "product_name": product.product_name,
+                "selling_price": product.selling_price,
+                "initial_stock": product.initial_stock,
+                "expiration_date": product.expiration_date,
+                "supplier_info": product.supplier_info
+            }
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": f"Update failed: {str(e)}"}), 500
