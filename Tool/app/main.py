@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_jwt_extended import JWTManager
-from flask_wtf.csrf import CSRFProtect
+from datetime import timedelta
 from db import db
 import pymysql
 import os
@@ -22,6 +22,7 @@ pymysql.install_as_MySQLdb()
 app = Flask(__name__)
 
 
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1) 
 
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
@@ -32,18 +33,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 #  object modifications (saves memory and avoids warnings)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Enable CSRF protection globally
-csrf = CSRFProtect(app)
 
 app.register_blueprint(security, url_prefix='/security')
 app.register_blueprint(product_view, url_prefix='/product_view')
 
-from security.auth import signup, login
-csrf.exempt(signup)
-csrf.exempt(login)
-# Exclude specific routes
-#csrf.exempt('security.login')  
-#csrf.exempt('security.signup')
+
 
 # Initializing extensions
 db.init_app(app)

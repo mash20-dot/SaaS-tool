@@ -1,6 +1,5 @@
 from flask import request, Blueprint, jsonify
 from flask_jwt_extended import create_access_token
-from flask_wtf.csrf import generate_csrf
 from app.models import User, db
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
@@ -110,12 +109,10 @@ def login():
         #app_logger.log_auth_success(email, existing_user.business_name)
 
         access_token = create_access_token(identity=email)
-        csrf_token = generate_csrf()
 
         return jsonify({"message":
                 "logged in successfully",
                 "access_token": access_token,
-                "csrf_token": csrf_token,
                 "business_name": existing_user.business_name
 
         }), 200

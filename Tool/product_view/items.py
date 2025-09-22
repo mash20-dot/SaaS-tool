@@ -36,8 +36,6 @@ def start():
         Missing_fields.append("initial_stock")
     if not expiration_date:
         Missing_fields.append("expiration_date")
-    if not supplier_info:
-        Missing_fields.append("supplier_info")
         if Missing_fields:
             return jsonify({"message":
             f"{Missing_fields} required"
@@ -45,7 +43,7 @@ def start():
 
     save_pro = Product(
         product_name=product_name,
-        sellinga_price=selling_price,
+        selling_price=selling_price,
         initial_stock=initial_stock,
         expiration_date=expiration_date,
         supplier_info=supplier_info,
@@ -125,7 +123,7 @@ def update_product(product_id):
         return jsonify({"message": f"Update failed: {str(e)}"}), 500
 
 
-@product_view.route('/product/<int:product_id>/archive/', methods=['POST'])
+@product_view.route('/product/<int:product_id>/archive', methods=['POST'])
 @jwt_required()
 def archive(product_id):
 
@@ -208,7 +206,7 @@ def filter_products():
     
 
 #route to get product based on the status         
-@product_view.route('/pro_duct', methods=['GET'])
+@product_view.route('/product', methods=['GET'])
 @jwt_required()
 def get_products():
     try:
