@@ -7,7 +7,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 product_view = Blueprint('product_view', '__name__')
 
 #route to post products
-@product_view.route('/start', methods=['POST'])
+@product_view.route('/product/post_product', methods=['POST'])
 @jwt_required()
 def start():
 
@@ -17,7 +17,7 @@ def start():
     if not current_user:
         return jsonify({"message":
                 "user not found"
-    }), 400
+        }), 400
 
 
     data = request.get_json()
@@ -56,64 +56,11 @@ def start():
     return jsonify({"message":
         "product information saves successfully"
                     
-    }), 200
-
-#route to get all products
-@product_view.route('/get_products', methods=['GET'])
-@jwt_required()
-def get_products():
-    
-    current_email = get_jwt_identity()
-    current_user = User.query.filter_by(email=current_email).first()
-    if not current_user:
-        return jsonify({"message":
-            "user not found"
-    }), 400
-
-    get_all = Product.query.all()
-
-    pro = []
-    for me in get_all:
-        pro.append({
-            "product_name":me.product_name,
-            "selling_price":me.selling_price,
-            "initial_stock":me.initial_stock,
-            "expiration_date":me.expiration_date,
-            "supplier_info":me.supplier_info
-
         }), 200
-        return jsonify(pro)
 
- #route to filter product   
-@product_view.route('/filter', methods=['GET'])
-@jwt_required()
-def filter():
 
-    current_email = get_jwt_identity()
-    current_user = User.query.filter_by(email=current_email).first()
-    if not current_user:
-        return jsonify({"message":
-            "user not found"
-    }), 400
 
-    data = request.get_json()
-    product_name = data.get("product_name")
 
-    filter_pro = Product.query.filter_by(product_name=product_name).first()
-    if not filter_pro:
-        return jsonify({"message":
-            "product not found"
-    }), 400
-
-    pro = []
-    for me in filter_pro:
-        pro.append({
-            "product_name":me.product_name,
-            "selling_price": me.selling_price,
-            "initial_stock":me.initial_stock,
-            "expiration_date":me.expiration_date,
-            "supplier_info":me.supplier_info
-    }), 200
 
 #route to update product        
 @product_view.route('/product/<int:product_id>', methods=['PUT'])
@@ -178,7 +125,7 @@ def update_product(product_id):
         return jsonify({"message": f"Update failed: {str(e)}"}), 500
 
 
-@product_view.route('/archive', methods=['POST'])
+@product_view.route('/product/<int:product_id>/archive/', methods=['POST'])
 @jwt_required()
 def archive(product_id):
 
@@ -211,7 +158,97 @@ def archive(product_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"message":
-        f"product could not be archived {str(e)}"
-    }), 500
+            f"product could not be archived {str(e)}"
+            }), 500
 
+
+@product_view.route('/product/filter', methods=['GET'])
+@jwt_required()
+def filter_products():
+    try:
+        # Identify the user
+        current_email = get_jwt_identity()
+        current_user = User.query.filter_by(email=current_email).first()
+        if not current_user:
+            return jsonify({"message": "user not found"}), 400
+
+        # Get search input from query string: /product/filter?name=keysoap
+        search_name = request.args.get("name")
+        if not search_name:
+            return jsonify({"message": "product name is required"}), 400
+
+        # Filter products by name (case-insensitive) + only this user
+        products = Product.query.filter(
+            Product.user_id == current_user.id,
+            Product.product_name.ilike(f"%{search_name}%")
+        ).all()
+
+        if not products:
+            return jsonify({"message": "no matching products found"}), 404
+
+        # Return matching products
+        return jsonify([
+            {
+                "product_name": p.product_name,
+                "selling_price": p.selling_price,
+                "initial_stock": p.initial_stock,
+                "expiration_date": p.expiration_date,
+                "supplier_info": p.supplier_info,
+                "status": p.status
+            }
+            for p in products
+        ]), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message":
+                 f"could not filter product: {str(e)}"
+                 }), 500
+
+    
+
+#route to get product based on the status         
+@product_view.route('/pro_duct', methods=['GET'])
+@jwt_required()
+def get_products():
+    try:
+        current_user_email = get_jwt_identity()
+        current_user = User.query.filter_by(email=current_user_email).first()
+        
+        if not current_user:
+            return jsonify({"message": "User not found"}), 404
+        
+        # Get status filter from query params, default=active
+        status = request.args.get('status', 'active') 
+        
+        if status == 'all':
+            products = Product.query.filter_by(user_id=current_user.id).all()
+        else:
+            products = Product.query.filter_by(user_id=current_user.id, status=status).all()
+        
+        products_list = []
+        for product in products:
+            product_data = {
+                "id": product.id,
+                "product_name": product.product_name,
+                "selling_price": product.selling_price,
+                "initial_stock": product.initial_stock,
+                "expiration_date": product.expiration_date,
+                "supplier_info": product.supplier_info,
+                "status": product.status
+            }
             
+            if product.archived_at:
+                product_data["archived_at"] = product.archived_at.isoformat()
+            
+            products_list.append(product_data)
+        
+        return jsonify({
+            "products": products_list,
+            "total": len(products_list),
+            "status_filter": status
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"message":
+         f"Error: {str(e)}"}), 500
