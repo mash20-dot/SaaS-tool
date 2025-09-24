@@ -203,7 +203,7 @@ def filter_products():
                  f"could not filter product: {str(e)}"
                  }), 500
 
-    
+    #Open a linkdin account for mhistack
 
 #route to get product based on the status         
 @product_view.route('/product', methods=['GET'])
