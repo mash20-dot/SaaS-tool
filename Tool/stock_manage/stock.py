@@ -39,5 +39,21 @@ def stock():
         "remaining_stock": product.remaining_stock
     }
 
+
+@stock_manage.route('/stock/alert', methods=['POST', 'GET'])
+@jwt_required()
+def stock_alert():
+
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(email=current_email).first()
+
+    if not current_user:
+        return jsonify({"message":
+            "user not found"
+        }), 400
+
+
+
+
     
     
