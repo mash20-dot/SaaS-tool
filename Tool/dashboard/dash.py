@@ -1,0 +1,38 @@
+from flask import request, Blueprint, jsonify
+from app.models import db, User, Product
+from flask_jwt_extended import get_jwt_identity, jwt_required
+
+
+dashboard = Blueprint('dashboard', '__name__')
+
+@dashboard.route('/board', methods=['GET'])
+@jwt_required()
+def board():
+
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(
+        email=current_email).first()
+
+    if not current_user:
+        return jsonify({"message":
+            "user not found"
+        }), 400
+    
+    all_pro = Product.query.all()
+    
+    all_info = []
+    for me in  all_pro:
+        all_info.append({
+            #"business_name": me.business_name,
+            "product_name":me.product_name,
+            "selling_price":me.selling_price,
+            "initial_stock":me.initial_stock,
+            "expiration_date":me.expiration_date,
+            "remaining_stock":me.remaining_stock
+        })
+
+    return jsonify(all_info), 200
+    
+
+    
+
