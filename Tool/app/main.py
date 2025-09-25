@@ -11,6 +11,7 @@ sys.path.append('.')
 
 from security.auth import security
 from product_view.items import product_view
+from stock_manage.stock import stock_manage
 
 
 
@@ -36,6 +37,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 app.register_blueprint(security, url_prefix='/security')
 app.register_blueprint(product_view, url_prefix='/product_view')
+app.register_blueprint(stock_manage, url_prefix='/stock_manage')
 
 
 

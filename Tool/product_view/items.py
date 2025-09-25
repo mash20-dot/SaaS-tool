@@ -45,6 +45,7 @@ def start():
         product_name=product_name,
         selling_price=selling_price,
         initial_stock=initial_stock,
+        remaining_stock=initial_stock,
         expiration_date=expiration_date,
         supplier_info=supplier_info,
         user_id=current_user.id
@@ -202,8 +203,6 @@ def filter_products():
         return jsonify({"message":
                  f"could not filter product: {str(e)}"
                  }), 500
-
-    #Open a linkdin account for mhistack
 
 #route to get product based on the status         
 @product_view.route('/product', methods=['GET'])

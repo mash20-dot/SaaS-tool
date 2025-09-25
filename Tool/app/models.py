@@ -16,13 +16,18 @@ class User(db.Model):
 
 
 class Product(db.Model):
+    #__tablename__ = "product"
+
     id = db.Column(db.Integer, primary_key=True)
     product_name = db.Column(db.String(250), nullable=False)
     selling_price = db.Column(db.String(250), nullable=False)
     initial_stock = db.Column(db.Integer, nullable=False)
+    remaining_stock = db.Column(db.Integer, nullable=False)
     expiration_date = db.Column(db.String(250), nullable=False)
     supplier_info = db.Column(db.String(1000))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(20), default='active')  # 'active', 'archived', 'discontinued'
-    archived_at = db.Column(db.DateTime)  # When it was archived
+    status = db.Column(db.String(20), default='active')
+    archived_at = db.Column(db.DateTime)
+
+
