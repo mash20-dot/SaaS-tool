@@ -18,7 +18,8 @@ def board():
             "user not found"
         }), 400
     
-    all_pro = Product.query.all()
+    all_pro = Product.query.filter_by(
+         user_id=current_user.id).all()
     
     all_info = []
     for me in  all_pro:

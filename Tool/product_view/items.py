@@ -160,30 +160,39 @@ def archive(product_id):
             f"product could not be archived {str(e)}"
             }), 500
 
-
+#search for product by name
 @product_view.route('/product/filter', methods=['GET'])
 @jwt_required()
 def filter_products():
     try:
         # Identify the user
         current_email = get_jwt_identity()
-        current_user = User.query.filter_by(email=current_email).first()
+        current_user = User.query.filter_by(
+            email=current_email).first()
         if not current_user:
             return jsonify({"message": "user not found"}), 400
 
         # Get search input from query string: /product/filter?name=keysoap
         search_name = request.args.get("name")
         if not search_name:
-            return jsonify({"message": "product name is required"}), 400
+            return jsonify({"message":
+             "product name is required"}), 400
 
         # Filter products by name (case-insensitive) + only this user
         products = Product.query.filter(
             Product.user_id == current_user.id,
             Product.product_name.ilike(f"%{search_name}%")
         ).all()
+#TEST THIS ROUTE MAKE SURE UNAUTHORIZE IS WORKING
+
+        #if products.user_id != current_user.id:
+            #return jsonify({"message":
+           # "Unauthorized "
+        #}), 403
 
         if not products:
-            return jsonify({"message": "no matching products found"}), 404
+            return jsonify({"message":
+             "no matching products found"}), 404
 
         # Return matching products
         return jsonify([

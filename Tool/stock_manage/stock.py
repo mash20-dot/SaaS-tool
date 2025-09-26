@@ -5,7 +5,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 
 stock_manage = Blueprint("stock_manage", "__name__")
 
-
+#route to enter stock to deduct
 @stock_manage.route('/stocks', methods=['POST'])
 @jwt_required()
 def stock():
@@ -22,7 +22,14 @@ def stock():
     quantity = data.get("quantity")
     product_name = data.get("product_name")
 
-    product = Product.query.filter_by(product_name=product_name).first()
+    product = Product.query.filter_by(
+        product_name=product_name).first()
+    
+    
+    if product.user_id != current_user.id:
+            return jsonify({"message":
+            "Unauthorized "
+        }), 403
 
     if not product:
         return {"error": "Product not found"}
