@@ -58,7 +58,22 @@ def stock_alert():
         return jsonify({"message":
             "user not found"
         }), 400
+    
+    products = Product.query.filter_by(
+         user_id=current_user.id).all()
+    
 
+    notification = []
+    for pro in products:
+         notification.append({
+              "product_name":pro.product_name,
+              "remaining_stock":pro.remaining_stock,
+              "message":
+                f"Low stock! Reoder {pro.product_name}"
+         })
+    return jsonify({"alert": notification}),200
+
+   
 
 
 

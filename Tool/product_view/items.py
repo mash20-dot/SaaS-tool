@@ -12,7 +12,8 @@ product_view = Blueprint('product_view', '__name__')
 def start():
 
     current_email = get_jwt_identity()
-    current_user = User.query.filter_by(email=current_email).first()
+    current_user = User.query.filter_by(
+        email=current_email).first()
 
     if not current_user:
         return jsonify({"message":
@@ -67,15 +68,18 @@ def start():
 def update_product(product_id):
     try:
         current_user_email = get_jwt_identity()
-        current_user = User.query.filter_by(email=current_user_email).first()
+        current_user = User.query.filter_by(
+            email=current_user_email).first()
         
         if not current_user:
-            return jsonify({"message": "User not found"}), 404
+            return jsonify({"message":
+                 "User not found"}), 404
         
         product = Product.query.get_or_404(product_id)
         
         if product.user_id != current_user.id:
-            return jsonify({"message": "Unauthorized to edit this product"}), 403
+            return jsonify({"message":
+         "Unauthorized to edit this product"}), 403
         
         data = request.get_json()
         updated_fields = []
@@ -124,6 +128,7 @@ def update_product(product_id):
         return jsonify({"message": f"Update failed: {str(e)}"}), 500
 
 
+#route to achive a product
 @product_view.route('/product/<int:product_id>/archive', methods=['POST'])
 @jwt_required()
 def archive(product_id):
