@@ -23,11 +23,25 @@ class Product(db.Model):
     selling_price = db.Column(db.String(250), nullable=False)
     initial_stock = db.Column(db.Integer, nullable=False)
     remaining_stock = db.Column(db.Integer, nullable=False)
+    reorder_point = db.Column(db.Integer, default=10)
     expiration_date = db.Column(db.String(250), nullable=False)
     supplier_info = db.Column(db.String(1000))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(20), default='active')
     archived_at = db.Column(db.DateTime)
+     # relationship to sales
+    sales = db.relationship("SalesHistory", back_populates="product", cascade="all, delete-orphan")
+
+class SalesHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    unit_price = db.Column(db.Float, nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+    # relationship back to product
+    product = db.relationship("Product", back_populates="sales")
+
 
 
