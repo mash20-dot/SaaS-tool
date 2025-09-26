@@ -170,7 +170,8 @@ def filter_products():
         current_user = User.query.filter_by(
             email=current_email).first()
         if not current_user:
-            return jsonify({"message": "user not found"}), 400
+            return jsonify({"message":
+                 "user not found"}), 400
 
         # Get search input from query string: /product/filter?name=keysoap
         search_name = request.args.get("name")
