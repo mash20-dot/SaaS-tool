@@ -184,12 +184,6 @@ def filter_products():
             Product.user_id == current_user.id,
             Product.product_name.ilike(f"%{search_name}%")
         ).all()
-#TEST THIS ROUTE MAKE SURE UNAUTHORIZE IS WORKING
-
-        #if products.user_id != current_user.id:
-            #return jsonify({"message":
-           # "Unauthorized "
-        #}), 403
 
         if not products:
             return jsonify({"message":
