@@ -13,6 +13,7 @@ from security.auth import security
 from product_view.items import product_view
 from stock_manage.stock import stock_manage
 from dashboard.dash import dashboard
+from payment.pay import payment
 
 
 
@@ -34,12 +35,14 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 #  event system for tracking
 #  object modifications (saves memory and avoids warnings)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['PAYSTACK_SECRET_KEY'] = os.getenv('PAYSTACK_SECRET_KEY')
 
 
 app.register_blueprint(security, url_prefix='/security')
 app.register_blueprint(product_view, url_prefix='/product_view')
 app.register_blueprint(stock_manage, url_prefix='/stock_manage')
 app.register_blueprint(dashboard, url_prefix='/dashboard')
+app.register_blueprint(payment, url_prefix='/payment')
 
 
 
