@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.models import db, User, Product, SalesHistory
+from app.models import db, User, Product, SalesHistory, Payment
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 
@@ -73,6 +73,14 @@ def stock_alert():
             "user not found"
         }), 400
     
+    premium = Payment.query.filter_by(
+        user_id=current_user.id, status="success").first()
+
+    if not premium:
+        return jsonify({"message":
+            "Upgrade to premium to access this feature"
+        }), 400
+    
     products = Product.query.filter_by(
          user_id=current_user.id).all()
     
@@ -89,6 +97,7 @@ def stock_alert():
     return jsonify({"alert": notification}),200
 
 
+#route to view sales history
 @stock_manage.route('/stocks/history', methods=['GET'])
 @jwt_required()
 def history():
@@ -100,6 +109,14 @@ def history():
     if not current_user:
         return jsonify({"message":
             "user not found"
+        }), 400
+    
+    premium = Payment.query.filter_by(
+        user_id=current_user.id, status="success").first()
+
+    if not premium:
+        return jsonify({"message":
+            "Upgrade to premium to access this feature"
         }), 400
     
     get_history = db.session.query(
@@ -120,6 +137,8 @@ def history():
    
 
 
-
-    
+#ENFORCE PREMIUM ONTO PREMIUM FEATURES
+#ADD A RBAC WHERE A BUSINESS OWNER CAN ADD THEIR WORKER
+#EXPORTING DATA TO EXCEL
+#ONLINE PAYMENT FOR BUSINESS WE CAN IMPLEMENT IN THE FUTURE
     

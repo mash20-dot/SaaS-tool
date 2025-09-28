@@ -1,6 +1,7 @@
 from flask import request, Blueprint, jsonify
 from flask_jwt_extended import create_access_token
 from app.models import User, db
+from app.db import app_logger
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
 #from utils_logger import app_logger
@@ -85,42 +86,47 @@ def signup():
 
 @security.route('/login', methods=['POST'])
 def login():
-
     try:
         data = request.get_json()
         email = data.get("email")
         password = data.get("password")
-       
-        # Log the login attempt
-        #app_logger.log_auth_attempt(email, request.remote_addr)
-    
-        if not email or not password:
-            return jsonify({"message":
-            "email and password required"}), 400
-        
-        existing_user = User.query.filter_by(email=email).first()
-        #app_logger.log_auth_failure(email, "Wrong password")
-        #app_logger.log_security_event("multiple_failed_attempts", f"user: {email}")
-        if not existing_user or not check_password_hash(existing_user.password, password):
-            return jsonify({"message":
-            "Invalid email or password"}), 400
-        
-        # Success!
-        #app_logger.log_auth_success(email, existing_user.business_name)
 
+        if not email or not password:
+            return jsonify({"message": "Email and password required"}), 400
+
+        # Log the attempt
+        app_logger.log_auth_attempt(email, request.remote_addr)
+
+        existing_user = User.query.filter_by(
+            email=email).first()
+        
+
+        if not existing_user or not check_password_hash(
+            existing_user.password, password):
+           
+            app_logger.log_auth_failure(
+                email, reason="Invalid email or password")
+           
+            return jsonify({"message":
+                 "Invalid email or password"}), 400
+
+        # Success
+        app_logger.log_auth_success(email, existing_user.business_name)
+        print(existing_user.business_name)
         access_token = create_access_token(identity=email)
 
-        return jsonify({"message":
-                "logged in successfully",
-                "access_token": access_token,
-                "business_name": existing_user.business_name
-
+        return jsonify({
+            "message": "Logged in successfully",
+            "access_token": access_token,
+            "business_name": existing_user.business_name
         }), 200
-    
+
     except Exception as e:
         db.session.rollback()
+        app_logger.log_error(
+            "Unexpected error during login",
+              exception=e,
+                context="login route")
+        
         return jsonify({"message":
-                f"login failed, {str(e)}"
-    }), 500
-        
-        
+             "An unexpected error occurred. Please try again later."}), 500

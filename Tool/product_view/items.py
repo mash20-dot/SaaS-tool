@@ -1,5 +1,5 @@
 from flask import request, Blueprint, jsonify
-from app.models import db, User, Product
+from app.models import db, User, Product, Payment
 from datetime import datetime
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
@@ -140,6 +140,14 @@ def archive(product_id):
         if not current_user:
             return jsonify({"message":
                 "user not found"
+        }), 400
+
+        premium = Payment.query.filter_by(
+        user_id=current_user.id, status="success").first()
+
+        if not premium:
+            return jsonify({"message":
+            "Upgrade to premium to access this feature"
         }), 400
 
         product = Product.query.get_or_404(product_id)

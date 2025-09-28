@@ -46,6 +46,7 @@ class SalesHistory(db.Model):
 
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
     # Amount in kobo (Paystack uses kobo, so 1000 = ₦10.00)
