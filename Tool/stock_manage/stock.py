@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.models import db, User, Product, SalesHistory, Payment
 from flask_jwt_extended import get_jwt_identity, jwt_required
-
+from datetime import datetime
 
 stock_manage = Blueprint("stock_manage", "__name__")
 
@@ -74,13 +74,19 @@ def stock_alert():
         }), 400
     
     premium = Payment.query.filter_by(
-        user_id=current_user.id, status="success").first()
+        user_id=current_user.id, status="success"
+    ).order_by(Payment.created_at.desc()).first()
 
     if not premium:
         return jsonify({"message":
-            "Upgrade to premium to access this feature"
-        }), 400
+         "You do not have a premium subscription. Please upgrade."}), 403
+
+    if premium.expiry_date < datetime.utcnow():
+        return jsonify({"message": 
+        "Your premium has expired. Please renew."}), 403
+
     
+   
     products = Product.query.filter_by(
          user_id=current_user.id).all()
     
@@ -112,13 +118,17 @@ def history():
         }), 400
     
     premium = Payment.query.filter_by(
-        user_id=current_user.id, status="success").first()
+        user_id=current_user.id, status="success"
+    ).order_by(Payment.created_at.desc()).first()
 
     if not premium:
         return jsonify({"message":
-            "Upgrade to premium to access this feature"
-        }), 400
-    
+         "You do not have a premium subscription. Please upgrade."}), 403
+
+    if premium.expiry_date < datetime.utcnow():
+        return jsonify({"message": 
+        "Your premium has expired. Please renew."}), 403
+
     get_history = db.session.query(
         SalesHistory, Product).join(Product).all()
     
@@ -135,9 +145,6 @@ def history():
 
     return jsonify(result), 200
    
-
-
-#ENFORCE PREMIUM ONTO PREMIUM FEATURES
 #ADD A RBAC WHERE A BUSINESS OWNER CAN ADD THEIR WORKER
 #EXPORTING DATA TO EXCEL
 #ONLINE PAYMENT FOR BUSINESS WE CAN IMPLEMENT IN THE FUTURE

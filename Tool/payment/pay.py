@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from app.models import db, User, Payment
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 import hmac, hashlib
 import os
@@ -39,8 +39,10 @@ def initialize_payment():
         amount=amount,
         reference=reference,
         status="pending",
-        created_at=datetime.utcnow()
+        created_at=datetime.utcnow(),
+        expiry_date=datetime.utcnow() + timedelta(days=30)
     )
+    
     db.session.add(payment)
     db.session.commit()
 

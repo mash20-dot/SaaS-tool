@@ -143,12 +143,18 @@ def archive(product_id):
         }), 400
 
         premium = Payment.query.filter_by(
-        user_id=current_user.id, status="success").first()
+        user_id=current_user.id, status="success"
+        ).order_by(Payment.created_at.desc()).first()
 
         if not premium:
             return jsonify({"message":
-            "Upgrade to premium to access this feature"
-        }), 400
+            "You do not have a premium subscription. Please upgrade."
+            }), 403
+        
+        if premium.expiry_date < datetime.utcnow():
+            return jsonify({"message": 
+            "Your premium has expired. Please renew."}), 403
+
 
         product = Product.query.get_or_404(product_id)
         if product.user_id != current_user.id:
