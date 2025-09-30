@@ -27,17 +27,18 @@ def export_excel():
         user_id=current_user.id, status="success"
     ).order_by(Payment.created_at.desc()).first()
 
-    if premium.expiry_date < datetime.utcnow():
-        return jsonify({"message": 
-            "Your premium has expired. Please renew."}), 403
-
+    
     if not premium:
         return jsonify({"message":
          "You do not have a premium subscription. Please upgrade."}), 403
 
     
+    if premium.expiry_date < datetime.utcnow():
+        return jsonify({"message": 
+            "Your premium has expired. Please renew."}), 403
 
-
+    
+    
     products = Product.query.filter_by(
         user_id=current_user.id).all()
     
@@ -47,20 +48,30 @@ def export_excel():
     ws = wb.active
     ws.title = "product"
 
-    # Add headers
-    ws.append(["Name", "Email"])
 
     # Add rows
-    for product in products:
-        ws.append([
+    ws.append([
             "product_name",
             "selling_price",
             "initial_stock",
             "remaining_stock",
             "reorder_point",
             "expiration_date",
-            "supplier_info",
-            "user_id",
+            "supplier_info"
+        ])
+
+        # Add rows from DB
+    for product in products:
+        ws.append([
+            product.product_name,
+            product.selling_price,
+            product.initial_stock,
+            product.remaining_stock,
+            product.reorder_point,
+            product.expiration_date if product.expiration_date else "",
+            product.supplier_info if product.supplier_info else "",
+            product.created_at.strftime("%Y-%m-%d") if product.created_at else "",
+            product.status
         ])
 
     # Save to bytes buffer
