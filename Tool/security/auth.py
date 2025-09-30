@@ -26,6 +26,10 @@ def signup():
         password = data.get("password")
 
 
+        # Log the attempt
+        #app_logger.log_auth_attempt(
+            #email, business_name, request.remote_addr)
+
 
         Missing_fields = []
 
@@ -112,7 +116,6 @@ def login():
 
         # Success
         app_logger.log_auth_success(email, existing_user.business_name)
-        print(existing_user.business_name)
         access_token = create_access_token(identity=email)
 
         return jsonify({

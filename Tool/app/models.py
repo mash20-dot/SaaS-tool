@@ -16,7 +16,6 @@ class User(db.Model):
 
 
 class Product(db.Model):
-    #__tablename__ = "product"
 
     id = db.Column(db.Integer, primary_key=True)
     product_name = db.Column(db.String(250), nullable=False)

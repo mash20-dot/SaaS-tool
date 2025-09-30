@@ -17,7 +17,7 @@ from product_view.items import product_view
 from stock_manage.stock import stock_manage
 from dashboard.dash import dashboard
 from payment.pay import payment
-
+from excel_export.excel import excel_export
 
 
 #Telling python to use pymysql
@@ -49,6 +49,7 @@ app.register_blueprint(product_view, url_prefix='/product_view')
 app.register_blueprint(stock_manage, url_prefix='/stock_manage')
 app.register_blueprint(dashboard, url_prefix='/dashboard')
 app.register_blueprint(payment, url_prefix='/payment')
+app.register_blueprint(excel_export, url_prefix='/excel_export')
 
 
 
