@@ -3,7 +3,6 @@ from flask_jwt_extended import JWTManager
 from datetime import timedelta
 from db import db, app_logger
 import pymysql
-import logging
 import os
 from dotenv import load_dotenv
 load_dotenv()
