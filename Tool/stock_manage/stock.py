@@ -18,7 +18,7 @@ def stock():
         return jsonify({"message":
                 "user not found"
         }), 400
-    
+
     data = request.get_json()
     quantity = data.get("quantity")
     product_name = data.get("product_name")
@@ -103,6 +103,7 @@ def stock_alert():
     return jsonify({"alert": notification}),200
 
 
+
 #route to view sales history
 @stock_manage.route('/stocks/history', methods=['GET'])
 @jwt_required()
@@ -117,6 +118,7 @@ def history():
             "user not found"
         }), 400
     
+
     premium = Payment.query.filter_by(
         user_id=current_user.id, status="success"
     ).order_by(Payment.created_at.desc()).first()
@@ -146,5 +148,4 @@ def history():
     return jsonify(result), 200
     
 #ADD A RBAC WHERE A BUSINESS OWNER CAN ADD THEIR WORKER
-#ONLINE PAYMENT FOR BUSINESS WE CAN IMPLEMENT IN THE FUTURE
-    
+
