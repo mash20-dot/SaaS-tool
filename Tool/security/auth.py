@@ -60,6 +60,7 @@ def signup():
         if not re.match(EMAIL_REGEX, email):
             return jsonify({"message":
                  "Invalid email format"}), 400
+        app_logger.sign_auth_failure(email, reason="Empty fields")
         
         hashed_password = generate_password_hash(password)
         
