@@ -44,8 +44,11 @@ class AppLogger:
         business_info = f"(Business: {business_name})" if business_name else ""
         self.logger.info(f"Signup SUCCESS - {email}{business_info}")
 
+    #for login and signup
     def log_auth_failure(self, email, reason="Invalid credentials"):
         self.logger.warning(f"Login FAILED - {email} - Reason: {reason}")
+    def sign_auth_failure(self, email, reason="Empty fields"):
+        self.logger.warning(f"Signup FAILED - {email} - Reason: {reason}")
 
     def log_user_action(self, action, details=None):
         current_user = _safe_get_user() or "Anonymous"
