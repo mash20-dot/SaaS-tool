@@ -30,13 +30,19 @@ class AppLogger:
         self.logger = logging.getLogger("app_logger")
         app.logger = self.logger
 
-
+    #for signup and login
     def log_auth_attempt(self, email, ip_address):
         self.logger.info(f"Login attempt - Email: {email}, IP: {ip_address}")
+    def sign_auth_attempt(self, email, ip_address):
+        self.logger.info(f"signup attempt - Email: {email}, ip: {ip_address}")
 
+    #for login and signup
     def log_auth_success(self, email, business_name=None):
         business_info = f" (Business: {business_name})" if business_name else ""
         self.logger.info(f"Login SUCCESS - {email}{business_info}")
+    def sign_auth_success(self, email, business_name=None):
+        business_info = f"(Business: {business_name})" if business_name else ""
+        self.logger.info(f"Signup SUCCESS - {email}{business_info}")
 
     def log_auth_failure(self, email, reason="Invalid credentials"):
         self.logger.warning(f"Login FAILED - {email} - Reason: {reason}")
