@@ -28,7 +28,7 @@ def signup():
 
 
          # Log the attempt
-        app_logger.log_auth_attempt(email, request.remote_addr)
+        app_logger.sign_auth_attempt(email, request.remote_addr)
 
         Missing_fields = []
 
@@ -74,7 +74,7 @@ def signup():
         )
 
          # Success
-        app_logger.log_auth_success(email)
+        app_logger.sign_auth_success(email)
 
         db.session.add(save_user)
         db.session.commit()
