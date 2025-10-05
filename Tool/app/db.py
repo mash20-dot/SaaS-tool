@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from utils_logger import AppLogger
+from .utils_logger import AppLogger
 
 db = SQLAlchemy()
 

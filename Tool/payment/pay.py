@@ -55,7 +55,7 @@ def initialize_payment():
         "Content-Type": "application/json"
 
     }
-    PREMIUM_PRICE = 3000
+    PREMIUM_PRICE = 10000
     payload = {
         "email": current_user.email,
         "amount": PREMIUM_PRICE,
