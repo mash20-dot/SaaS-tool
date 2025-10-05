@@ -26,10 +26,9 @@ def signup():
         password = data.get("password")
 
 
-        # Log the attempt
-        #app_logger.log_auth_attempt(
-            #email, business_name, request.remote_addr)
 
+         # Log the attempt
+        app_logger.log_auth_attempt(email, request.remote_addr)
 
         Missing_fields = []
 
@@ -73,6 +72,9 @@ def signup():
             location=location,
             password=hashed_password
         )
+
+         # Success
+        app_logger.log_auth_success(email)
 
         db.session.add(save_user)
         db.session.commit()
