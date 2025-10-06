@@ -32,4 +32,5 @@ zope.interface==8.0
 gunicorn
 mysql-connector-python
 flask_migrate
+flask_cors 
 
