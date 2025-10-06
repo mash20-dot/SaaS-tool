@@ -2,6 +2,8 @@ from flask import Flask
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
 from .db import db, app_logger
+from .db import migrate
+from flask_cors import CORS
 import pymysql
 import os
 from dotenv import load_dotenv
@@ -25,6 +27,14 @@ pymysql.install_as_MySQLdb()
 
 
 app = Flask(__name__)
+
+CORS(app, resources={r"/*": {"origins": [
+    "http://localhost:3000",
+    "http://localhost:4000", 
+    "https://nkwabiz.com",
+    "https://www.nkwabiz.com"
+]}}, supports_credentials=True, allow_headers="*", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+
 
 app_logger.init_app(app)
 
@@ -55,6 +65,7 @@ app.register_blueprint(excel_export, url_prefix='/excel_export')
 # Initializing extensions
 db.init_app(app)
 jwt = JWTManager(app)
+migrate.init_app(app, db)
 
 
 
