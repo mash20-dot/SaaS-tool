@@ -31,4 +31,5 @@ WTForms==3.2.1
 zope.interface==8.0
 gunicorn
 mysql-connector-python
+flask_migrate
 
