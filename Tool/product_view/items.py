@@ -59,9 +59,6 @@ def start():
         }), 200
 
 
-
-
-
 #route to update product        
 @product_view.route('/product/<int:product_id>', methods=['PUT'])
 @jwt_required()
