@@ -18,7 +18,7 @@ class Product(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     product_name = db.Column(db.String(250), nullable=False)
-    selling_price = db.Column(db.String(250), nullable=False)
+    selling_price = db.Column(db.Integer, nullable=False)
     initial_stock = db.Column(db.Integer, nullable=False)
     remaining_stock = db.Column(db.Integer, nullable=False)
     reorder_point = db.Column(db.Integer, default=10)
