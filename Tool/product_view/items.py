@@ -59,6 +59,31 @@ def start():
         }), 200
 
 
+@product_view.route('/products', methods=['GET'])
+@jwt_required()
+def products():
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(
+        email=current_email).first()
+    
+    if not current_user:
+        return jsonify({"message": "user not found"}), 400
+
+    all_pro = Product.query.filter_by(
+        user_id=current_user.id).all()
+
+    pro = []
+    for me in all_pro:
+        pro.append({
+            "product_name": me.product_name,
+            "initial_stock": me.initial_stock,
+            "expiration_date": me.expiration_date,
+            "selling_price": me.selling_price
+        })
+
+    return jsonify(pro), 200
+
+
 #route to update product        
 @product_view.route('/product/<int:product_id>', methods=['PUT'])
 @jwt_required()
