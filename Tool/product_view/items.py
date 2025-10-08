@@ -77,8 +77,10 @@ def products():
         pro.append({
             "product_name": me.product_name,
             "initial_stock": me.initial_stock,
+            "remaining_stock":me.remaining_stock,
             "expiration_date": me.expiration_date,
             "selling_price": me.selling_price
+
         })
 
     return jsonify(pro), 200
