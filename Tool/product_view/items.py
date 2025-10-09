@@ -23,8 +23,8 @@ def start():
 
     data = request.get_json()
     product_name = data.get("product_name")
-    selling_price = data.get("selling_price")
-    initial_stock = data.get("initial_stock")
+    selling_price = int(data.get("selling_price"))
+    initial_stock = int(data.get("initial_stock"))
     expiration_date = data.get("expiration_date")
     supplier_info = data.get("supplier_info")
 
