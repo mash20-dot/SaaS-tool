@@ -20,7 +20,7 @@ def stock():
         }), 400
 
     data = request.get_json()
-    quantity = data.get("quantity")
+    quantity = int(data.get("quantity"))
     product_name = data.get("product_name")
 
     product = Product.query.filter_by(
@@ -45,7 +45,6 @@ def stock():
         quantity=quantity, 
         unit_price=product.selling_price,
         total_price=product.selling_price*quantity
-
 
     )
 
