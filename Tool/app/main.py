@@ -1,8 +1,7 @@
 from flask import Flask
 from flask_jwt_extended import JWTManager
 from datetime import timedelta
-from .db import db, app_logger
-from .db import migrate
+from .db import db, app_logger, migrate
 from flask_cors import CORS
 import pymysql
 import os

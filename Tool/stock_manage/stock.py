@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
-from app.models import db, User, Product, SalesHistory, Payment
+from app.models import User, Product, SalesHistory, Payment
+from app.db import db
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from datetime import datetime
 
@@ -39,12 +40,14 @@ def stock():
     if product.remaining_stock < quantity:
         return jsonify({"error":
                  "Not enough stock"}), 400
-    
+    print("TYPE:", type(product.selling_price), "VALUE:", product.selling_price)
+
     sales = SalesHistory(
         product_id=product.id,
         quantity=quantity, 
         unit_price=product.selling_price,
-        total_price=product.selling_price*quantity
+        total_price=product.selling_price*quantity,
+        profit=(product.selling_price - product.amount_spent)*quantity
 
     )
 
@@ -103,7 +106,7 @@ def stock_alert():
 
 
 
-#route to view sales history
+#route to view sales analytics and history
 @stock_manage.route('/stocks/history', methods=['GET'])
 @jwt_required()
 def history():
@@ -141,6 +144,7 @@ def history():
             "quantity": sale.quantity,
             "unit_price":sale.unit_price,
             "total_price":sale.total_price,
+            "profit":sale.profit,
             "date": sale.created_at
         })
 

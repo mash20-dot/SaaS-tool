@@ -2,7 +2,7 @@ from flask import Blueprint, Response, send_file, jsonify
 from openpyxl import Workbook
 import io
 from datetime import datetime
-from app.models import db, User, Product, Payment
+from app.models import User, Product, Payment
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 
