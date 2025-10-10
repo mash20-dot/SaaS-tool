@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from app.models import db, User, Payment
+from app.models import User, Payment
+from app.db import db 
 from datetime import datetime, timedelta
 import requests
 import hmac, hashlib

@@ -1,5 +1,6 @@
 from flask import request, Blueprint, jsonify
-from app.models import db, User, Product, Payment
+from app.models import User, Product, Payment
+from app.db import db 
 from datetime import datetime
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
@@ -10,41 +11,35 @@ product_view = Blueprint('product_view', '__name__')
 @product_view.route('/product/post_product', methods=['POST'])
 @jwt_required()
 def start():
-
     current_email = get_jwt_identity()
     current_user = User.query.filter_by(
         email=current_email).first()
 
     if not current_user:
         return jsonify({"message":
-                "user not found"
-        }), 400
-
+                 "user not found"}), 400
 
     data = request.get_json()
-    product_name = data.get("product_name")
-    selling_price = int(data.get("selling_price"))
-    initial_stock = int(data.get("initial_stock"))
-    expiration_date = data.get("expiration_date")
-    supplier_info = data.get("supplier_info")
 
-    Missing_fields = []
-    if not product_name:
-        Missing_fields.append("product_name")
-    if not selling_price:
-        Missing_fields.append("selling_price")
-    if not initial_stock:
-        Missing_fields.append("initial_stock")
-    if not expiration_date:
-        Missing_fields.append("expiration_date")
-        if Missing_fields:
-            return jsonify({"message":
-            f"{Missing_fields} required"
-        }), 400
+    try:
+        product_name = data.get("product_name")
+        selling_price = data.get("selling_price")
+        amount_spent = data.get("amount_spent")
+        initial_stock = data.get("initial_stock")
+        expiration_date = data.get("expiration_date")
+        supplier_info = data.get("supplier_info")
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid data type for one or more fields"}), 400
+
+    # Validation
+    missing_fields = [f for f in ["product_name", "selling_price", "initial_stock", "expiration_date"] if not data.get(f)]
+    if missing_fields:
+        return jsonify({"message": f"{missing_fields} required"}), 400
 
     save_pro = Product(
         product_name=product_name,
         selling_price=selling_price,
+        amount_spent=amount_spent, 
         initial_stock=initial_stock,
         remaining_stock=initial_stock,
         expiration_date=expiration_date,
@@ -53,38 +48,9 @@ def start():
     )
     db.session.add(save_pro)
     db.session.commit()
+
     return jsonify({"message":
-        "product information saves successfully"
-                    
-        }), 200
-
-
-@product_view.route('/products', methods=['GET'])
-@jwt_required()
-def products():
-    current_email = get_jwt_identity()
-    current_user = User.query.filter_by(
-        email=current_email).first()
-    
-    if not current_user:
-        return jsonify({"message": "user not found"}), 400
-
-    all_pro = Product.query.filter_by(
-        user_id=current_user.id).all()
-
-    pro = []
-    for me in all_pro:
-        pro.append({
-            "product_name": me.product_name,
-            "initial_stock": me.initial_stock,
-            "remaining_stock":me.remaining_stock,
-            "expiration_date": me.expiration_date,
-            "selling_price": me.selling_price
-            
-        })
-
-    return jsonify(pro), 200
-
+             "product information saved successfully"}), 200
 
 #route to update product        
 @product_view.route('/product/<int:product_id>', methods=['PUT'])
