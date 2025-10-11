@@ -1,11 +1,9 @@
 from flask import request, Blueprint, jsonify
 from flask_jwt_extended import create_access_token
 from app.models import User
-from app.db import db 
-from app.db import app_logger
+from app.db import db, app_logger 
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
-#from utils_logger import app_logger
 
 security = Blueprint('security', '__name__')
 

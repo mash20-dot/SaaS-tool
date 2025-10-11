@@ -82,7 +82,12 @@ def update_product(product_id):
         if data.get('selling_price'):
             product.selling_price = data['selling_price']
             updated_fields.append('selling_price')
+        
+        if data.get('amount_spent'):
+            product.amount_spent = data['amount_spent']
+            updated_fields.append('amount_spent')
             
+
         if data.get('initial_stock') is not None:  # Allow 0 as valid value
             product.initial_stock = data['initial_stock']
             updated_fields.append('initial_stock')
