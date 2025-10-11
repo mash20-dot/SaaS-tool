@@ -1,4 +1,4 @@
-from flask import Blueprint, Response, send_file, jsonify
+from flask import Blueprint,send_file, jsonify
 from openpyxl import Workbook
 import io
 from datetime import datetime
@@ -53,6 +53,7 @@ def export_excel():
     ws.append([
             "product_name",
             "selling_price",
+            "amount_spent"
             "initial_stock",
             "remaining_stock",
             "reorder_point",
@@ -65,6 +66,7 @@ def export_excel():
         ws.append([
             product.product_name,
             product.selling_price,
+            product.amount_spent,
             product.initial_stock,
             product.remaining_stock,
             product.reorder_point,

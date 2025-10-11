@@ -40,7 +40,7 @@ def stock():
     if product.remaining_stock < quantity:
         return jsonify({"error":
                  "Not enough stock"}), 400
-    print("TYPE:", type(product.selling_price), "VALUE:", product.selling_price)
+
 
     sales = SalesHistory(
         product_id=product.id,
@@ -150,5 +150,5 @@ def history():
 
     return jsonify(result), 200
     
-#ADD A RBAC WHERE A BUSINESS OWNER CAN ADD THEIR WORKER
+
 
