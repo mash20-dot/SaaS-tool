@@ -159,31 +159,24 @@ def history():
 @stock_manage.route('/product/sold', methods=['GET'])
 @jwt_required()
 def sold():
-
     current_email = get_jwt_identity()
-    current_user = User.query.filter_by(
-        email=current_email
-    ).first()
+    current_user = User.query.filter_by(email=current_email).first()
 
     if not current_user:
-        return jsonify({"message":
-                "user not found"
-                        
-        }),400
-
+        return jsonify({"message": "user not found"}), 400
 
     get_history = (
-    db.session.query(SalesHistory, Product)
-    .join(Product)
-    .filter(Product.user_id == current_user.id)
-    .all()
+        db.session.query(SalesHistory, Product)
+        .join(Product)
+        .filter(Product.user_id == current_user.id)
+        .all()
     )
 
     results = []
-    for product in get_history:
+    for sale, product in get_history:
         results.append({
-            "product_name":product.product_name,
-            "quantity":product.quantity
+            "product_name": product.product_name,
+            "quantity": sale.quantity
         })
-    return jsonify (results), 200
 
+    return jsonify(results), 200
