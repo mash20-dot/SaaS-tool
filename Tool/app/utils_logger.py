@@ -11,7 +11,7 @@ from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
 def _safe_get_user():
     """Try to get the current user from JWT without requiring it."""
     try:
-        verify_jwt_in_request(optional=True)  # won't raise if no JWT
+        verify_jwt_in_request(optional=True) 
         return get_jwt_identity()
     except Exception:
         return None
@@ -36,6 +36,13 @@ class AppLogger:
     def sign_auth_attempt(self, email, ip_address):
         self.logger.info(f"signup attempt - Email: {email}, ip: {ip_address}")
 
+    #for posting products
+    def product_attempt(self, current_user, ip_address):
+        self.logger.info(f"product post attempt: {current_user} added a product, ip: {ip_address}")
+
+    
+
+
     #for login and signup
     def log_auth_success(self, email, business_name=None):
         business_info = f" (Business: {business_name})" if business_name else ""
@@ -44,11 +51,24 @@ class AppLogger:
         business_info = f"(Business: {business_name})" if business_name else ""
         self.logger.info(f"Signup SUCCESS - {email}{business_info}")
 
+
+    #for posting product
+    def product_success(self, current_user):
+        self.logger.info(f"Product added by {current_user}")
+    
+
+
     #for login and signup
     def log_auth_failure(self, email, reason="Invalid credentials"):
         self.logger.warning(f"Login FAILED - {email} - Reason: {reason}")
     def sign_auth_failure(self, email, reason="Empty fields"):
         self.logger.warning(f"Signup FAILED - {email} - Reason: {reason}")
+    
+
+    #for posting product
+    def product_failure(self, current_user, reason="Missing fields"):
+        self.logger.info(f"Failed to add product, {current_user}, Reasons: {reason}")
+
 
     def log_user_action(self, action, details=None):
         current_user = _safe_get_user() or "Anonymous"

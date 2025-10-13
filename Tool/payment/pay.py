@@ -114,25 +114,59 @@ def verify_payment(reference):
 #paystack webhook
 @payment.route("/paystack/webhook", methods=["POST"])
 def paystack_webhook():
-    # Verify signature
-    paystack_signature = request.headers.get("x-paystack-signature")
-    body = request.get_data()
+    """
+    Handles Paystack payment webhooks securely and updates payment status.
+    """
 
-    secret = os.getenv("PAYSTACK_SECRET_KEY").encode()
-    computer_signature = hmac.new(secret, body, hashlib.sha512).hexdigest()
+    try:
+        # Verify Paystack signature
+        paystack_signature = request.headers.get("x-paystack-signature")
+        body = request.get_data()
 
-    if computer_signature != paystack_signature:
-        return jsonify({"status": "error", "message": "Invalid signature"}), 400
+        if not paystack_signature:
+            return jsonify({
+                "status":
+                  "error", 
+                  "message": "Missing signature"}), 400
 
-    event = request.get_json()
+        secret = os.getenv("PAYSTACK_SECRET_KEY", "").encode()
+        computed_signature = hmac.new(secret, body, hashlib.sha512).hexdigest()
 
-    if event["event"] == "charge.success":
-        reference = event["data"]["reference"]
-        # update your Payment record
-        payment = Payment.query.filter_by(reference=reference).first()
-        if payment:
-            payment.status = "success"
-            db.session.commit()
+        if computed_signature != paystack_signature:
+            return jsonify({"status": "error", "message": "Invalid signature"}), 400
 
-    return jsonify({"status": "success"}), 200
+        # Parse JSON payload
+        event = request.get_json(silent=True)
+        if not event:
+            return jsonify({"status": "error", "message": "Invalid JSON payload"}), 400
 
+        event_type = event.get("event")
+        data = event.get("data", {})
+        reference = data.get("reference")
+
+        # Process relevant events
+        if event_type == "charge.success":
+            if not reference:
+                return jsonify({"status": "error", "message": "Missing reference"}), 400
+
+            payment = Payment.query.filter_by(reference=reference).first()
+            if payment:
+                if payment.status != "success":
+                    payment.status = "success"
+                    db.session.commit()
+            else:
+                return jsonify({
+                    f"No Payment record found for reference: {reference}"}), 404
+
+        elif event_type == "charge.failed":
+            if reference:
+                payment = Payment.query.filter_by(reference=reference).first()
+                if payment:
+                    payment.status = "failed"
+                    db.session.commit()
+
+        # Always respond 200 to acknowledge receipt
+        return jsonify({"status": "success"}), 200
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500

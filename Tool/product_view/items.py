@@ -1,6 +1,6 @@
 from flask import request, Blueprint, jsonify
 from app.models import User, Product, Payment
-from app.db import db 
+from app.db import db , app_logger
 from datetime import datetime
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
@@ -31,10 +31,17 @@ def start():
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid data type for one or more fields"}), 400
 
+    #post attemp
+    app_logger.product_attempt(current_user, request.remote_addr)
+
+
     # Validation
     missing_fields = [f for f in ["product_name", "selling_price", "initial_stock", "expiration_date"] if not data.get(f)]
     if missing_fields:
+        app_logger.product_failure(current_user, reason="missing fields")
         return jsonify({"message": f"{missing_fields} required"}), 400
+    
+
 
     save_pro = Product(
         product_name=product_name,
@@ -46,6 +53,9 @@ def start():
         supplier_info=supplier_info,
         user_id=current_user.id
     )
+
+    app_logger.product_success(current_email)
+
     db.session.add(save_pro)
     db.session.commit()
 
