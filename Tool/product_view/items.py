@@ -36,7 +36,7 @@ def start():
 
 
     # Validation
-    missing_fields = [f for f in ["product_name", "selling_price", "initial_stock", "expiration_date"] if not data.get(f)]
+    missing_fields = [f for f in ["product_name", "selling_price", "initial_stock", "amount_spent"] if not data.get(f)]
     if missing_fields:
         app_logger.product_failure(current_user, reason="missing fields")
         return jsonify({"message": f"{missing_fields} required"}), 400
