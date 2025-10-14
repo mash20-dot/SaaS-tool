@@ -39,8 +39,19 @@ class AppLogger:
     #for posting products
     def product_attempt(self, current_user, ip_address):
         self.logger.info(f"product post attempt: {current_user} added a product, ip: {ip_address}")
+    #update product
+    def product_update_attempt(self, current_user, ip_address):
+        self.logger.info(f"{current_user} attempt to update product, ip:{ip_address}")
+    #archive product
+    def product_archive_attempt(self, current_user, ip_address):
+        self.logger.info(f"{current_user} attempt to archive a product, ip: {ip_address}")
+    #product search
+    def product_search_attempt(self, current_user, ip_address):
+        self.logger.info(f"{current_user} attempt to search for product, ip:{ip_address}")
+    #product_status
+    def product_status_attempt(self, current_user, ip_address):
+        self.logger.info(f"{current_user} tried searching for s product, ip:{ip_address}")
 
-    
 
 
     #for login and signup
@@ -50,12 +61,24 @@ class AppLogger:
     def sign_auth_success(self, email, business_name=None):
         business_info = f"(Business: {business_name})" if business_name else ""
         self.logger.info(f"Signup SUCCESS - {email}{business_info}")
-
+    
 
     #for posting product
     def product_success(self, current_user):
         self.logger.info(f"Product added by {current_user}")
-    
+    #update product
+    def product_update_success(self, current_user):
+        self.logger.info(f"product updated by {current_user}")
+    #archive product
+    def product_archive_success(self, current_user):
+        self.logger.info(f"{current_user} archive a product")
+    #product search
+    def product_search_success(self, current_user):
+        self.logger.info(f"{current_user} searched for a product")
+    #product status
+    def product_status_success(self, current_user):
+        self.logger.info(f"{current_user} searched for a product based on status")
+
 
 
     #for login and signup
@@ -63,11 +86,25 @@ class AppLogger:
         self.logger.warning(f"Login FAILED - {email} - Reason: {reason}")
     def sign_auth_failure(self, email, reason="Empty fields"):
         self.logger.warning(f"Signup FAILED - {email} - Reason: {reason}")
+
     
 
     #for posting product
     def product_failure(self, current_user, reason="Missing fields"):
         self.logger.info(f"Failed to add product, {current_user}, Reasons: {reason}")
+    #product update
+    def product_update_failure(self, current_user, reason="Missing fileds"):
+        self.logger.info(f"Failed to update product by {current_user}, Reasons={reason}")
+    #product archive
+    def product_archive_failure(self, current_user, reason="unauthorized"):
+        self.logger.info(f"{current_user} failed to archive a product, Reasons={reason}")
+    #product search
+    def product_search_failure(self, current_user, reason="missing field"):
+        self.logger.info(f"{current_user} failed to search product, Reason={reason}")
+    #product status
+    def product_status_failure(self, current_user, reason="failed"):
+        self.logger.info(f"{current_user}, Reasons={reason}")
+
 
 
     def log_user_action(self, action, details=None):
