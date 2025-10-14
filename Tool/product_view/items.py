@@ -75,11 +75,17 @@ def update_product(product_id):
             return jsonify({"message":
                  "User not found"}), 404
         
+       
+        
         product = Product.query.get_or_404(product_id)
+
+        app_logger.product_update_attempt(current_user, request.remote_addr)
+        
         
         if product.user_id != current_user.id:
             return jsonify({"message":
          "Unauthorized to edit this product"}), 403
+        
         
         data = request.get_json()
         updated_fields = []
@@ -111,8 +117,11 @@ def update_product(product_id):
             updated_fields.append('supplier_info')
         
         if not updated_fields:
+            app_logger.product_failure(current_user, reason="missinf fields")
             return jsonify({"message": "No valid fields provided for update"}), 400
         
+        app_logger.product_success(current_user)
+
         db.session.commit()
         
         return jsonify({
@@ -147,6 +156,8 @@ def archive(product_id):
                 "user not found"
         }), 400
 
+        app_logger.product_archive_attempt(current_user, request.remote_addr)
+
         premium = Payment.query.filter_by(
         user_id=current_user.id, status="success"
         ).order_by(Payment.created_at.desc()).first()
@@ -163,6 +174,7 @@ def archive(product_id):
 
         product = Product.query.get_or_404(product_id)
         if product.user_id != current_user.id:
+            app_logger.product_archive_failure(current_user, reason="unauthorized")
             return jsonify({"message":
             "Unauthorized "
         }), 403
@@ -170,6 +182,8 @@ def archive(product_id):
         # Archiving the product
         product.status = 'archived'
         product.archived_at = datetime.utcnow()
+
+        app_logger.product_archive_success(current_user)
 
         db.session.commit()
         return jsonify({"message":
@@ -196,10 +210,13 @@ def filter_products():
         if not current_user:
             return jsonify({"message":
                  "user not found"}), 400
+        
+        app_logger.product_search_attempt(current_user, request.remote_addr)
 
         # Get search input from query string: /product/filter?name=keysoap
         search_name = request.args.get("name")
         if not search_name:
+            app_logger.product_search_failure(current_user, reason="missing field")
             return jsonify({"message":
              "product name is required"}), 400
 
@@ -212,6 +229,8 @@ def filter_products():
         if not products:
             return jsonify({"message":
              "no matching products found"}), 404
+        
+        app_logger.product_search_success(current_user)
 
         # Return matching products
         return jsonify([
@@ -243,6 +262,8 @@ def get_products():
         if not current_user:
             return jsonify({"message": "User not found"}), 404
         
+        app_logger.product_status_attempt(current_user, request.remote_addr)
+        
         # Get status filter from query params, default=active
         status = request.args.get('status', 'active') 
         
@@ -264,9 +285,12 @@ def get_products():
             }
             
             if product.archived_at:
+                #app_logger.product_status_failure(current_user)
                 product_data["archived_at"] = product.archived_at.isoformat()
             
             products_list.append(product_data)
+        
+        app_logger.product_status_success(current_user)
         
         return jsonify({
             "products": products_list,
@@ -277,3 +301,6 @@ def get_products():
     except Exception as e:
         return jsonify({"message":
          f"Error: {str(e)}"}), 500
+
+
+
