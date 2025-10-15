@@ -48,7 +48,7 @@ def stock():
         unit_price=product.selling_price,
         total_price=product.selling_price*quantity,
         profit=(product.selling_price - product.amount_spent)*quantity
-
+#return the sum of all sales money with the latest date
     )
 
     # deduct
@@ -110,16 +110,12 @@ def stock_alert():
 @stock_manage.route('/stocks/history', methods=['GET'])
 @jwt_required()
 def history():
-
     current_email = get_jwt_identity()
     current_user = User.query.filter_by(
         email=current_email).first()
-    
+
     if not current_user:
-        return jsonify({"message":
-            "user not found"
-        }), 400
-    
+        return jsonify({"message": "User not found"}), 400
 
     premium = Payment.query.filter_by(
         user_id=current_user.id, status="success"
@@ -130,30 +126,55 @@ def history():
          "You do not have a premium subscription. Please upgrade."}), 403
 
     if premium.expiry_date < datetime.utcnow():
-        return jsonify({"message": 
-        "Your premium has expired. Please renew."}), 403
+        return jsonify({"message":
+             "Your premium has expired. Please renew."}), 403
 
+    # Fetch all sales history joined with Product
     get_history = (
-    db.session.query(SalesHistory, Product)
-    .join(Product)
-    .filter(Product.user_id == current_user.id)
-    .all()
+        db.session.query(SalesHistory, Product)
+        .join(Product)
+        .filter(Product.user_id == current_user.id)
+        .all()
     )
+
+    if not get_history:
+        return jsonify({"message":
+                 "No sales history found"}), 404
 
     result = []
     for sale, product in get_history:
         result.append({
             "sale_id": sale.id,
-            "product_name": product.product_name, 
+            "product_name": product.product_name,
             "quantity": sale.quantity,
-            "unit_price":sale.unit_price,
-            "total_price":sale.total_price,
-            "profit":sale.profit,
+            "unit_price": sale.unit_price,
+            "total_price": sale.total_price,
+            "profit": sale.profit,
             "date": sale.created_at
         })
 
-    return jsonify(result), 200
-    
+    # Get total profit and total sales for the most recent date
+    sale_dates = [sale.created_at.date() for sale, _ in get_history]
+    most_recent_date = max(sale_dates)
+
+    # Filter sales for that date
+    sales_for_recent_date = [
+        sale for sale, _ in get_history
+        if sale.created_at.date() == most_recent_date
+    ]
+
+    # Compute totals
+    total_profit_today = sum(sale.profit for sale in sales_for_recent_date)
+    total_sales_today = sum(sale.total_price for sale in sales_for_recent_date)
+
+    return jsonify({
+        "sales_history": result,
+        "summary": {
+            "recent_date": most_recent_date.isoformat(),
+            "total_sales_for_recent_date": total_sales_today,
+            "total_profit_for_recent_date": total_profit_today
+        }
+    }), 200
 
 #route to get product sold, for free users
 @stock_manage.route('/product/sold', methods=['GET'])
