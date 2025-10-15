@@ -197,7 +197,9 @@ def sold():
     for sale, product in get_history:
         results.append({
             "product_name": product.product_name,
-            "quantity": sale.quantity
+            "quantity": sale.quantity,
+            "total_price": sale.total_price,
+            "date": sale.created_at
         })
 
     return jsonify(results), 200
