@@ -30,7 +30,8 @@ def board():
             "amount_spent":me.amount_spent,
             "initial_stock":me.initial_stock,
             "expiration_date":me.expiration_date,
-            "remaining_stock":me.remaining_stock
+            "remaining_stock":me.remaining_stock,
+            "supplier_info":me.supplier_info
         })
 
     return jsonify(all_info), 200
