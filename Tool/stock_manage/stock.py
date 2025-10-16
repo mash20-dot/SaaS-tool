@@ -203,3 +203,70 @@ def sold():
         })
 
     return jsonify(results), 200
+
+
+
+#route to return the sales for a month
+@stock_manage.route('/monthly/sales', methods=['GET'])
+@jwt_required()
+def monthly_sales():
+    from datetime import datetime
+
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(email=current_email).first()
+
+    if not current_user:
+        return jsonify({"message": "User not found"}), 400
+
+
+    year = request.args.get('year', type=int)
+    month = request.args.get('month', type=int)
+
+    # Using current year/month if not provided
+    now = datetime.utcnow()
+    year = year or now.year
+    month = month or now.month
+
+
+    query = (
+        db.session.query(
+            db.extract('year', SalesHistory.created_at).label('year'),
+            db.extract('month', SalesHistory.created_at).label('month'),
+            db.func.sum(SalesHistory.total_price).label('total_sales'),
+            db.func.sum(SalesHistory.profit).label('total_profit')
+        )
+        .join(Product, Product.id == SalesHistory.product_id)
+        .filter(Product.user_id == current_user.id)
+        .filter(db.extract('year', SalesHistory.created_at) == year)
+    )
+
+    # Optional month filter
+    if month:
+        query = query.filter(db.extract('month', SalesHistory.created_at) == month)
+
+    query = query.group_by('year', 'month').order_by(db.desc('year'), db.desc('month'))
+    results = query.all()
+
+    if not results:
+        return jsonify({
+            "message": f"No sales data found for {year}-{month:02d}"
+        }), 404
+
+    monthly_summary = [
+        {
+            "year": int(r.year),
+            "month": int(r.month),
+            "total_sales": float(r.total_sales),
+            "total_profit": float(r.total_profit)
+        }
+        for r in results
+    ]
+
+    return jsonify({
+        "user": current_user.email,
+        "filter_used": {
+            "year": year,
+            "month": month
+        },
+        "monthly_sales_summary": monthly_summary
+    }), 200
