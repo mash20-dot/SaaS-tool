@@ -190,6 +190,7 @@ def sold():
         db.session.query(SalesHistory, Product)
         .join(Product)
         .filter(Product.user_id == current_user.id)
+        .order_by(SalesHistory.created_at.desc()) 
         .all()
     )
 
