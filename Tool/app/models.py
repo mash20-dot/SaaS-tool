@@ -11,6 +11,7 @@ class User(db.Model):
     password = db.Column(db.String(400), nullable=False)
     products = db.relationship('Product', backref='user', lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    spent = db.relationship('Spent', backref='user', lazy=True)
 
 
 
@@ -66,5 +67,14 @@ class Payment(db.Model):
 
     expiry_date = db.Column(db.DateTime)
 
+
+
+class Spent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    description = db.Column(db.String(255))
+    amount = db.Column(db.Float)
+    category = db.Column(db.String(100))  
+    date = db.Column(db.DateTime, default=datetime.utcnow)
 
 
