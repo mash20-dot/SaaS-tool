@@ -48,7 +48,9 @@ def get_expenses():
         email=current_email).first()
 
     expenses = Spent.query.filter_by(
-        user_id=current_user.id).order_by(Spent.date.desc()).all()
+        user_id=current_user.id).order_by(
+            Spent.date.desc()).all()
+   
     result = []
     for e in expenses:
         result.append({
@@ -84,9 +86,11 @@ def expense_summary():
 
     # Apply filters if provided
     if month:
-        query = query.filter(extract('month', Spent.date) == month)
+        query = query.filter(
+            extract('month', Spent.date) == month)
     if year:
-        query = query.filter(extract('year', Spent.date) == year)
+        query = query.filter(
+            extract('year', Spent.date) == year)
 
 
     query = (
