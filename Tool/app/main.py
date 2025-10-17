@@ -18,6 +18,7 @@ from stock_manage.stock import stock_manage
 from dashboard.dash import dashboard
 from payment.pay import payment
 from excel_export.excel import excel_export
+from expenses.track import expenses
 
 
 #Telling python to use pymysql
@@ -59,7 +60,7 @@ app.register_blueprint(stock_manage, url_prefix='/stock_manage')
 app.register_blueprint(dashboard, url_prefix='/dashboard')
 app.register_blueprint(payment, url_prefix='/payment')
 app.register_blueprint(excel_export, url_prefix='/excel_export')
-
+app.register_blueprint(expenses, url_prefix='/expenses')
 
 
 # Initializing extensions
