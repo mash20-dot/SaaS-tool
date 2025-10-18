@@ -63,13 +63,6 @@ def get_expenses():
     return jsonify(result), 200
 
 
-from flask import Blueprint, jsonify, request
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import extract, func, desc
-from datetime import datetime
-
-# assuming your blueprint
-# expenses = Blueprint('expenses', __name__)
 
 @expenses.route('/track/summary', methods=['GET'])
 @jwt_required()
