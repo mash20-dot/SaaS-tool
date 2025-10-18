@@ -12,55 +12,34 @@ excel_export = Blueprint('excel_export', '__name__')
 @excel_export.route("/export/excel", methods=['GET'])
 @jwt_required()
 def export_excel():
-
     current_email = get_jwt_identity()
-    current_user = User.query.filter_by(
-        email=current_email
-    ).first()
+    current_user = User.query.filter_by(email=current_email).first()
 
     if not current_user:
-        return jsonify({"message":
-            "user not found"
-        }), 400
-    
-    #premium = Payment.query.filter_by(
-       # user_id=current_user.id, status="success"
-   # ).order_by(Payment.created_at.desc()).first()
+        return jsonify({"message": "User not found"}), 400
 
-    
-    #if not premium:
-       #"You do not have a premium subscription. Please upgrade."}), 403
+    products = Product.query.filter_by(user_id=current_user.id).all()
 
-    
-   # if premium.expiry_date < datetime.utcnow():
-        #return jsonify({"message": 
-            #"Your premium has expired. Please renew."}), 403
-
-    
-    
-    products = Product.query.filter_by(
-        user_id=current_user.id).all()
-    
-
-
+    # Create workbook and sheet
     wb = Workbook()
     ws = wb.active
-    ws.title = "product"
+    ws.title = "Products"
 
-
-    # Add rows
+    # Header row (fixed commas + consistent order)
     ws.append([
-            "product_name",
-            "selling_price",
-            "amount_spent"
-            "initial_stock",
-            "remaining_stock",
-            "reorder_point",
-            "expiration_date",
-            "supplier_info"
-        ])
+        "Product Name",
+        "Selling Price",
+        "Amount Spent",
+        "Initial Stock",
+        "Remaining Stock",
+        "Reorder Point",
+        "Expiration Date",
+        "Supplier Info",
+        "Date Created",
+        "Status"
+    ])
 
-        # Add rows from DB
+    # Add rows from database
     for product in products:
         ws.append([
             product.product_name,
@@ -69,17 +48,18 @@ def export_excel():
             product.initial_stock,
             product.remaining_stock,
             product.reorder_point,
-            product.expiration_date if product.expiration_date else "",
-            product.supplier_info if product.supplier_info else "",
+            product.expiration_date.strftime("%Y-%m-%d") if product.expiration_date else "",
+            product.supplier_info or "",
             product.created_at.strftime("%Y-%m-%d") if product.created_at else "",
-            product.status
+            product.status or ""
         ])
 
-    # Save to bytes buffer
+    # Save to memory
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
 
+    # Return file as attachment
     return send_file(
         output,
         as_attachment=True,
