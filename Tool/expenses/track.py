@@ -8,7 +8,7 @@ from datetime import datetime
 
 expenses =  Blueprint('expenses', '__name__')
 
-@expenses.route('/track', methods=['POST', 'GET'])
+@expenses.route('/add', methods=['POST', 'GET'])
 @jwt_required()
 def track():
 
@@ -65,7 +65,7 @@ def get_expenses():
 
 
 
-@expenses.route('/track/summary', methods=['GET', 'POST'])
+@expenses.route('/track', methods=['GET', 'POST'])
 @jwt_required()
 def expense_summary():
     try:
