@@ -65,7 +65,7 @@ def get_expenses():
 
 
 
-@expenses.route('/track', methods=['GET', 'POST'])
+@expenses.route('/track', methods=['GET'])
 @jwt_required()
 def expense_summary():
     try:
@@ -73,87 +73,83 @@ def expense_summary():
         current_user = User.query.filter_by(email=current_email).first()
 
         if not current_user:
-            return jsonify({
-                "status": "error",
-                "message": "User not found"
-            }), 404
+            return jsonify({"status": "error", "message": "User not found"}), 404
 
-        # Accept date, year, and month
+        # Get filters
         date_str = request.args.get("date")
         year = request.args.get("year", type=int)
         month = request.args.get("month", type=int)
 
-        # If 'date' is given, extract year & month automatically
+        # If date provided, extract year/month
         if date_str:
             try:
-                parsed_date = datetime.strptime(date_str, "%Y/%m/%d")
+                parsed_date = datetime.strptime(date_str, "%Y-%m-%d")
                 year = parsed_date.year
                 month = parsed_date.month
             except ValueError:
-                return jsonify({
-                    "status": "error",
-                    "message": "Invalid date format. Please use YYYY/MM/DD."
-                }), 400
+                return jsonify({"status": "error", "message": "Invalid date format. Use YYYY-MM-DD."}), 400
 
-        # Validate month and year
-        if month and (month < 1 or month > 12):
-            return jsonify({
-                "status": "error",
-                "message": "Invalid month value. Must be between 1 and 12."
-            }), 400
+        # Query for summary
+        summary_query = (
+            db.session.query(
+                extract('year', Spent.date).label('year'),
+                extract('month', Spent.date).label('month'),
+                func.sum(Spent.amount).label('total_expenses')
+            )
+            .filter(Spent.user_id == current_user.id)
+        )
 
-        if year and (year < 2000 or year > datetime.utcnow().year + 1):
-            return jsonify({
-                "status": "error",
-                "message": "Invalid year value."
-            }), 400
-
-        # Build query
-        query = db.session.query(
-            extract('year', Spent.date).label('year'),
-            extract('month', Spent.date).label('month'),
-            func.sum(Spent.amount).label('total_expenses')
-        ).filter(Spent.user_id == current_user.id)
-
-        # Apply filters if provided
         if year:
-            query = query.filter(extract('year', Spent.date) == year)
+            summary_query = summary_query.filter(extract('year', Spent.date) == year)
         if month:
-            query = query.filter(extract('month', Spent.date) == month)
+            summary_query = summary_query.filter(extract('month', Spent.date) == month)
 
-        # Group and order
-        query = query.group_by('year', 'month').order_by(desc('year'), desc('month'))
-        results = query.all()
+        summary_query = summary_query.group_by('year', 'month').order_by(desc('year'), desc('month'))
+        summary_results = summary_query.all()
 
-        if not results:
+        # Query for detailed transactions
+        transactions_query = Spent.query.filter_by(user_id=current_user.id)
+        if year:
+            transactions_query = transactions_query.filter(extract('year', Spent.date) == year)
+        if month:
+            transactions_query = transactions_query.filter(extract('month', Spent.date) == month)
+
+        transactions = transactions_query.order_by(desc(Spent.date)).all()
+
+        if not summary_results:
             return jsonify({
                 "status": "error",
                 "message": f"No expense data found for year={year or 'all'}, month={month or 'all'}."
             }), 404
 
-        # Build response
-        response_data = [
+        # Format summary
+        summary = [
             {
                 "year": int(r.year),
                 "month": int(r.month),
                 "total_expenses": float(r.total_expenses)
-            }
-            for r in results
+            } for r in summary_results
+        ]
+
+        # Format transactions
+        history = [
+            {
+                "expense_id": exp.id,
+                "amount": float(exp.amount),
+                "description": exp.description,
+                "category": getattr(exp, "category", None),
+                "date": exp.date.isoformat()
+            } for exp in transactions
         ]
 
         return jsonify({
             "status": "success",
-            "filter_used": {
-                "date": date_str,
-                "year": year,
-                "month": month
-            },
-            "monthly_expense_summary": response_data,
+            "filter_used": {"date": date_str, "year": year, "month": month},
+            "monthly_expense_summary": summary,
+            "expenses_history": history,
             "user": current_email
         }), 200
 
     except Exception as e:
-        return jsonify({
-            "status": "error",
-            "message": f"An unexpected error occurred: {str(e)}"
-        }), 500
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
