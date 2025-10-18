@@ -63,63 +63,81 @@ def get_expenses():
     return jsonify(result), 200
 
 
+
 @expenses.route('/track/summary', methods=['GET'])
 @jwt_required()
 def expense_summary():
-    current_email = get_jwt_identity()
-    current_user = User.query.filter_by(
-        email=current_email).first()
+    try:
+        current_email = get_jwt_identity()
+        current_user = User.query.filter_by(email=current_email).first()
 
-    if not current_user:
-        return jsonify({"message":
-                 "User not found"}), 404
+        if not current_user:
+            return jsonify({
+                "status": "error",
+                "message": "User not found"
+            }), 404
 
-    # Optional filters
-    month = request.args.get("month", type=int)
-    year = request.args.get("year", type=int)
+        # Get optional filters from query params
+        year = request.args.get("year", type=int)
+        month = request.args.get("month", type=int)
 
-    query = db.session.query(
-        extract('year', Spent.date).label('year'),
-        extract('month', Spent.date).label('month'),
-        func.sum(Spent.amount).label('total_expenses')
-    ).filter(Spent.user_id == current_user.id)
+        # Validate query parameters
+        if month and (month < 1 or month > 12):
+            return jsonify({
+                "status": "error",
+                "message": "Invalid month value. Must be between 1 and 12."
+            }), 400
 
-    # Apply filters if provided
-    if month:
-        query = query.filter(
-            extract('month', Spent.date) == month)
-    if year:
-        query = query.filter(
-            extract('year', Spent.date) == year)
+        if year and (year < 2000 or year > datetime.utcnow().year + 1):
+            return jsonify({
+                "status": "error",
+                "message": "Invalid year value."
+            }), 400
 
+        # Build query
+        query = db.session.query(
+            extract('year', Spent.date).label('year'),
+            extract('month', Spent.date).label('month'),
+            func.sum(Spent.amount).label('total_expenses')
+        ).filter(Spent.user_id == current_user.id)
 
-    query = (
-    db.session.query(
-        extract('year', Spent.date).label('year'),
-        extract('month', Spent.date).label('month'),
-        func.sum(Spent.amount).label('total_expenses')
-    )
-    .filter(Spent.user_id == current_user.id)
-    .group_by('year', 'month')
-    .order_by(desc('year'), desc('month')) 
-    )
-   
-    results = query.all()
+        # Apply filters if provided
+        if year:
+            query = query.filter(extract('year', Spent.date) == year)
+        if month:
+            query = query.filter(extract('month', Spent.date) == month)
 
-    response = [
-        {
-            "year": int(r.year),
-            "month": int(r.month),
-            "total_expenses": float(r.total_expenses)
-        }
-        for r in results
-    ]
+        # Group and order
+        query = query.group_by('year', 'month').order_by(desc('year'), desc('month'))
 
-    return jsonify({
-        "filter_used": {"month": month, "year": year},
-        "monthly_expense_summary": response,
-        "user": current_email
-    }), 200
+        results = query.all()
 
+        if not results:
+            return jsonify({
+                "status": "error",
+                "message": f"No expense data found for year={year or 'all'}, month={month or 'all'}."
+            }), 404
 
+        # Build response
+        response_data = [
+            {
+                "year": int(r.year),
+                "month": int(r.month),
+                "total_expenses": float(r.total_expenses)
+            }
+            for r in results
+        ]
 
+        return jsonify({
+            "status": "success",
+            "filter_used": {"year": year, "month": month},
+            "monthly_expense_summary": response_data,
+            "user": current_email
+        }), 200
+
+    except Exception as e:
+        # Catch-all error for debugging or unexpected issues
+        return jsonify({
+            "status": "error",
+            "message": f"An error occurred while processing your request: {str(e)}"
+        }), 500
