@@ -278,7 +278,9 @@ def get_products():
                 "id": product.id,
                 "product_name": product.product_name,
                 "selling_price": product.selling_price,
+                "amount_spent":product.amount_spent,
                 "initial_stock": product.initial_stock,
+                "remaining_stock": product.remaining_stock,
                 "expiration_date": product.expiration_date,
                 "supplier_info": product.supplier_info,
                 "status": product.status

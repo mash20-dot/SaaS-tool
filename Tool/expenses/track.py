@@ -121,3 +121,7 @@ def expense_summary():
         "user": current_email
     }), 200
 
+
+
+
+ROUTE TO UPDATE THE USERS CREDENTIALS 
