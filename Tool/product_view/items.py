@@ -158,18 +158,18 @@ def archive(product_id):
 
         app_logger.product_archive_attempt(current_user, request.remote_addr)
 
-        premium = Payment.query.filter_by(
-        user_id=current_user.id, status="success"
-        ).order_by(Payment.created_at.desc()).first()
+        #premium = Payment.query.filter_by(
+        #user_id=current_user.id, status="success"
+        #).order_by(Payment.created_at.desc()).first()
 
-        if not premium:
-            return jsonify({"message":
-            "You do not have a premium subscription. Please upgrade."
-            }), 403
+        #if not premium:
+            #return jsonify({"message":
+           # "You do not have a premium subscription. Please upgrade."
+           # }), 403
         
-        if premium.expiry_date < datetime.utcnow():
-            return jsonify({"message": 
-            "Your premium has expired. Please renew."}), 403
+        #if premium.expiry_date < datetime.utcnow():
+            #return jsonify({"message": 
+           # "Your premium has expired. Please renew."}), 403
 
 
         product = Product.query.get_or_404(product_id)
