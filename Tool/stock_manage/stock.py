@@ -75,17 +75,17 @@ def stock_alert():
             "user not found"
         }), 400
     
-    premium = Payment.query.filter_by(
-        user_id=current_user.id, status="success"
-    ).order_by(Payment.created_at.desc()).first()
+    #premium = Payment.query.filter_by(
+       # user_id=current_user.id, status="success"
+   # ).order_by(Payment.created_at.desc()).first()
 
-    if not premium:
-        return jsonify({"message":
-         "You do not have a premium subscription. Please upgrade."}), 403
+   # if not premium:
+       # return jsonify({"message":
+         #"You do not have a premium subscription. Please upgrade."}), 403
 
-    if premium.expiry_date < datetime.utcnow():
-        return jsonify({"message": 
-        "Your premium has expired. Please renew."}), 403
+    #if premium.expiry_date < datetime.utcnow():
+       # return jsonify({"message": 
+        #"Your premium has expired. Please renew."}), 403
 
     
    
@@ -117,17 +117,17 @@ def history():
     if not current_user:
         return jsonify({"message": "User not found"}), 400
 
-    premium = Payment.query.filter_by(
-        user_id=current_user.id, status="success"
-    ).order_by(Payment.created_at.desc()).first()
+   # premium = Payment.query.filter_by(
+        #user_id=current_user.id, status="success"
+   # ).order_by(Payment.created_at.desc()).first()
 
-    if not premium:
-        return jsonify({"message":
-         "You do not have a premium subscription. Please upgrade."}), 403
+    #if not premium:
+        #return jsonify({"message":
+         #"You do not have a premium subscription. Please upgrade."}), 403
 
-    if premium.expiry_date < datetime.utcnow():
-        return jsonify({"message":
-             "Your premium has expired. Please renew."}), 403
+    #if premium.expiry_date < datetime.utcnow():
+        #return jsonify({"message":
+            # "Your premium has expired. Please renew."}), 403
 
     # Fetch all sales history joined with Product
     get_history = (
