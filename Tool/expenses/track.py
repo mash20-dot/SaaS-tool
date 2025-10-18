@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.db import db
 from app.models import User, Spent
 from sqlalchemy import extract, func, desc
+from datetime import datetime
 
 
 expenses =  Blueprint('expenses', '__name__')
