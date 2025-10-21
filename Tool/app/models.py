@@ -12,6 +12,7 @@ class User(db.Model):
     products = db.relationship('Product', backref='user', lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     spent = db.relationship('Spent', backref='user', lazy=True)
+    store = db.relationship('Store', back_populates='owner')
 
 
 
@@ -76,5 +77,32 @@ class Spent(db.Model):
     amount = db.Column(db.Float)
     category = db.Column(db.String(100))  
     date = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+
+class SMSHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(db.Integer, nullable=False)
+    recipients = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Store(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    store_name = db.Column(db.String(100), nullable=False)
+    slug = db.Column(db.String(120), unique=True, nullable=False)
+    whatsapp_business_number = db.Column(db.String(20), nullable=False)
+    logo_url = db.Column(db.String(255))
+    cover_url = db.Column(db.String(255))
+    description = db.Column(db.String(300))
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    owner = db.relationship('User', back_populates='store')
+
+
+   
 
 
