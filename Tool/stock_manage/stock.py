@@ -171,8 +171,8 @@ def history():
         "sales_history": result,
         "summary": {
             "recent_date": most_recent_date.isoformat(),
-            "total_sales_for_recent_date": total_sales_today,
-            "total_profit_for_recent_date": total_profit_today
+            "total_sales_for_recent_date": float(total_sales_today),
+            "total_profit_for_recent_date": float(total_profit_today)
         }
     }), 200
 
