@@ -66,3 +66,4 @@ def export_excel():
         download_name="products.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+

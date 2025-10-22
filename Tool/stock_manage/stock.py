@@ -45,9 +45,9 @@ def stock():
     sales = SalesHistory(
         product_id=product.id,
         quantity=quantity, 
-        unit_price=product.selling_price,
-        total_price=product.selling_price*quantity,
-        profit=(product.selling_price - product.amount_spent)*quantity
+        unit_price=float(product.selling_price),
+        total_price=float(product.selling_price*quantity),
+        profit=float(product.selling_price - product.amount_spent)*quantity
 #return the sum of all sales money with the latest date
     )
 
@@ -146,10 +146,10 @@ def history():
         result.append({
             "sale_id": sale.id,
             "product_name": product.product_name,
-            "quantity": sale.quantity,
-            "unit_price": sale.unit_price,
-            "total_price": sale.total_price,
-            "profit": sale.profit,
+            "quantity": float(sale.quantity),
+            "unit_price": float(sale.unit_price),
+            "total_price": float(sale.total_price),
+            "profit": float(sale.profit),
             "date": sale.created_at
         })
 
@@ -199,7 +199,7 @@ def sold():
         results.append({
             "product_name": product.product_name,
             "quantity": sale.quantity,
-            "total_price": sale.total_price,
+            "total_price": float(sale.total_price),
             "date": sale.created_at
         })
 

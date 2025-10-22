@@ -12,6 +12,7 @@ class User(db.Model):
     products = db.relationship('Product', backref='user', lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     spent = db.relationship('Spent', backref='user', lazy=True)
+    store = db.relationship('Store', back_populates='owner')
 
 
 
@@ -19,8 +20,8 @@ class Product(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     product_name = db.Column(db.String(250), nullable=False)
-    selling_price = db.Column(db.Integer, nullable=False)
-    amount_spent = db.Column(db.Integer, nullable=False)
+    selling_price = db.Column(db.Numeric(10,2), nullable=False)
+    amount_spent = db.Column(db.Numeric(10,2), nullable=False)
     initial_stock = db.Column(db.Integer, nullable=False)
     remaining_stock = db.Column(db.Integer, nullable=False)
     reorder_point = db.Column(db.Integer, default=10)
@@ -37,9 +38,9 @@ class SalesHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
-    unit_price = db.Column(db.Float, nullable=False)
-    total_price = db.Column(db.Float, nullable=False)
-    profit = db.Column(db.Float, nullable=False)
+    unit_price = db.Column(db.Numeric(10,2), nullable=False)
+    total_price = db.Column(db.Numeric(10,2), nullable=False)
+    profit = db.Column(db.Numeric(10,2), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     # relationship back to product
     product = db.relationship("Product", back_populates="sales")
@@ -73,8 +74,35 @@ class Spent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     description = db.Column(db.String(255))
-    amount = db.Column(db.Float)
+    amount = db.Column(db.Numeric(10,2))
     category = db.Column(db.String(100))  
     date = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+
+class SMSHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(db.Integer, nullable=False)
+    recipients = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class Store(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    store_name = db.Column(db.String(100), nullable=False)
+    slug = db.Column(db.String(120), unique=True, nullable=False)
+    whatsapp_business_number = db.Column(db.String(20), nullable=False)
+    logo_url = db.Column(db.String(255))
+    cover_url = db.Column(db.String(255))
+    description = db.Column(db.String(300))
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    owner = db.relationship('User', back_populates='store')
+
+
+   
 
 

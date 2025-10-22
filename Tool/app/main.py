@@ -19,6 +19,8 @@ from dashboard.dash import dashboard
 from payment.pay import payment
 from excel_export.excel import excel_export
 from expenses.track import expenses
+from sms.send import sms
+from store.create import store 
 
 
 #Telling python to use pymysql
@@ -38,6 +40,7 @@ CORS(app, resources={
             "http://localhost:5173",
             "https://nkwabiz.com",
             "https://www.nkwabiz.com",
+            "https://nkwabiz-frontend-1.onrender.com",
             "https://saas-tool-mf02.onrender.com" 
         ],
         "supports_credentials": True,
@@ -60,6 +63,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 #  object modifications (saves memory and avoids warnings)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PAYSTACK_SECRET_KEY'] = os.getenv('PAYSTACK_SECRET_KEY')
+app.config['ARKESEL_SMS_KEY'] = os.getenv('ARKESEL_SMS_KEY')
 
 
 
@@ -71,7 +75,8 @@ app.register_blueprint(dashboard, url_prefix='/dashboard')
 app.register_blueprint(payment, url_prefix='/payment')
 app.register_blueprint(excel_export, url_prefix='/excel_export')
 app.register_blueprint(expenses, url_prefix='/expenses')
-
+app.register_blueprint(sms, url_prefix='/sms')
+app.register_blueprint(store, url_prefix='/store')
 
 # Initializing extensions
 db.init_app(app)
@@ -90,4 +95,4 @@ with app.app_context():
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
