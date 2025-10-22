@@ -33,4 +33,5 @@ gunicorn
 mysql-connector-python
 flask_migrate
 flask_cors 
+slugify
 
