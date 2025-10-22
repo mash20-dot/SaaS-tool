@@ -130,7 +130,7 @@ def update_product(product_id):
             "product": {
                 "id": product.id,
                 "product_name": product.product_name,
-                "selling_price": product.selling_price,
+                "selling_price": float(product.selling_price),
                 "initial_stock": product.initial_stock,
                 "expiration_date": product.expiration_date,
                 "supplier_info": product.supplier_info
@@ -236,7 +236,7 @@ def filter_products():
         return jsonify([
             {
                 "product_name": p.product_name,
-                "selling_price": p.selling_price,
+                "selling_price": float(p.selling_price),
                 "initial_stock": p.initial_stock,
                 "expiration_date": p.expiration_date,
                 "supplier_info": p.supplier_info,
@@ -277,8 +277,8 @@ def get_products():
             product_data = {
                 "id": product.id,
                 "product_name": product.product_name,
-                "selling_price": product.selling_price,
-                "amount_spent":product.amount_spent,
+                "selling_price": float(product.selling_price),
+                "amount_spent":float(product.amount_spent),
                 "initial_stock": product.initial_stock,
                 "remaining_stock": product.remaining_stock,
                 "expiration_date": product.expiration_date,

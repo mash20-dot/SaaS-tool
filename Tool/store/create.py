@@ -83,3 +83,5 @@ def create():
         "slug": slug,
         "full_url": full_url
     }), 201
+
+

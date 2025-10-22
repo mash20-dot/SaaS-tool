@@ -26,8 +26,8 @@ def board():
         all_info.append({
             #"business_name": me.business_name,
             "product_name":me.product_name,
-            "selling_price":me.selling_price,
-            "amount_spent":me.amount_spent,
+            "selling_price":float(me.selling_price),
+            "amount_spent":float(me.amount_spent),
             "initial_stock":me.initial_stock,
             "expiration_date":me.expiration_date,
             "remaining_stock":me.remaining_stock,

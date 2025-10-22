@@ -20,8 +20,8 @@ class Product(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     product_name = db.Column(db.String(250), nullable=False)
-    selling_price = db.Column(db.Integer, nullable=False)
-    amount_spent = db.Column(db.Integer, nullable=False)
+    selling_price = db.Column(db.Numeric(10,2), nullable=False)
+    amount_spent = db.Column(db.Numeric(10,2), nullable=False)
     initial_stock = db.Column(db.Integer, nullable=False)
     remaining_stock = db.Column(db.Integer, nullable=False)
     reorder_point = db.Column(db.Integer, default=10)
@@ -38,9 +38,9 @@ class SalesHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_id = db.Column(db.Integer, db.ForeignKey("product.id"), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
-    unit_price = db.Column(db.Float, nullable=False)
-    total_price = db.Column(db.Float, nullable=False)
-    profit = db.Column(db.Float, nullable=False)
+    unit_price = db.Column(db.Numeric(10,2), nullable=False)
+    total_price = db.Column(db.Numeric(10,2), nullable=False)
+    profit = db.Column(db.Numeric(10,2), nullable=False)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     # relationship back to product
     product = db.relationship("Product", back_populates="sales")
@@ -74,7 +74,7 @@ class Spent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     description = db.Column(db.String(255))
-    amount = db.Column(db.Float)
+    amount = db.Column(db.Numeric(10,2))
     category = db.Column(db.String(100))  
     date = db.Column(db.DateTime, default=datetime.utcnow)
 
