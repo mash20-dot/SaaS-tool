@@ -56,7 +56,7 @@ def get_expenses():
     for e in expenses:
         result.append({
             "description": e.description,
-            "amount": e.amount,
+            "amount": float(e.amount),
             "category": e.category,
             "date": e.date
         })
