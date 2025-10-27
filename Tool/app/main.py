@@ -21,6 +21,8 @@ from excel_export.excel import excel_export
 from expenses.track import expenses
 from sms.send import sms
 from store.create import store 
+from chatus.contact import chatus
+from blog.write import blog
 
 
 #Telling python to use pymysql
@@ -77,6 +79,8 @@ app.register_blueprint(excel_export, url_prefix='/excel_export')
 app.register_blueprint(expenses, url_prefix='/expenses')
 app.register_blueprint(sms, url_prefix='/sms')
 app.register_blueprint(store, url_prefix='/store')
+app.register_blueprint(chatus, url_prefix='/chatus')
+app.register_blueprint(blog, url_prefix=('/blog'))
 
 # Initializing extensions
 db.init_app(app)
@@ -95,4 +99,4 @@ with app.app_context():
 
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)

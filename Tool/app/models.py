@@ -13,7 +13,7 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     spent = db.relationship('Spent', backref='user', lazy=True)
     store = db.relationship('Store', back_populates='owner')
-
+    store_product = db.relationship('Store_product', backref='user', lazy=True)
 
 
 class Product(db.Model):
@@ -101,6 +101,24 @@ class Store(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     owner = db.relationship('User', back_populates='store')
+
+class Store_product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    store_id = db.Column(db.Integer, db.ForeignKey('store.id'), nullable=False)
+    product_name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(150))
+    amount = db.Column(db.Numeric(10,2))
+    logo_url = db.Column(db.String(300))
+
+
+class Blog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.TEXT(10000), nullable=False)
+    topic = db.Column(db.TEXT(10000), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 
 
    
