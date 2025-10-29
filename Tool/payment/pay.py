@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import requests
 import hmac, hashlib
 import os
+from decimal import Decimal
 
 
 
@@ -33,6 +34,9 @@ def initialize_payment():
         return jsonify({"message":
              "amount and email required"}), 400
 
+    paystack_amount = int(float(amount)* 100)
+
+
     # Create a new Payment record
     reference = f"PAY-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{current_user.id}"
     payment = Payment(
@@ -56,10 +60,9 @@ def initialize_payment():
         "Content-Type": "application/json"
 
     }
-    PREMIUM_PRICE = 9900
     payload = {
         "email": current_user.email,
-        "amount": PREMIUM_PRICE,
+        "amount": paystack_amount,
         "currency": "GHS", 
         "reference": reference
     }
@@ -79,15 +82,24 @@ def initialize_payment():
 
     return jsonify(paystack_response)
 
+
+
 #VERIFYING PAYMENTS
 @payment.route('/verify_payment/<reference>', methods=['GET'])
 @jwt_required()
 def verify_payment(reference):
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(
+        email=current_email).first()
+
+    if not current_user:
+        return jsonify({"message": "User not found"}), 404
 
     url = f"https://api.paystack.co/transaction/verify/{reference}"
-    headers ={
-    "Authorization": f"Bearer {os.getenv('PAYSTACK_SECRET_KEY')}"
+    headers = {
+        "Authorization": f"Bearer {os.getenv('PAYSTACK_SECRET_KEY')}"
     }
+
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
@@ -95,20 +107,47 @@ def verify_payment(reference):
     except requests.exceptions.RequestException:
         return jsonify({"message": "Error verifying transaction"}), 500
     except ValueError:
-        return jsonify({"message": "Invalid response from paystack"}), 500
-    
-    payment = Payment.query.filter_by(reference=reference).first()
+        return jsonify({"message": "Invalid response from Paystack"}), 500
+
+    # Find existing payment
+    payment = Payment.query.filter_by(
+        reference=reference).first()
     if not payment:
-        return jsonify({"message": "payment not found"}), 404
-    
-    if verification_data["data"]["status"] == "success":
+        return jsonify({"message":
+             "Payment not found"}), 404
+
+    # Prevent reprocessing
+    if payment.status == "success":
+        return jsonify({"message":
+             "Payment already processed"}), 200
+
+    # Extract Paystack data
+    paystack_data = verification_data.get("data", {})
+    if paystack_data.get("status") == "success":
+        # Convert pesewas to GHS
+        amount_paid = float(paystack_data["amount"]) / 100
+
+        # Update payment status & amount
         payment.status = "success"
-    
+        payment.amount = amount_paid
+
+        # Update user balance
+        current_user.balance = float(current_user.balance or 0) + float(amount_paid)
+
+        db.session.commit()
+
+        return jsonify({
+            "message": "Payment verified successfully",
+            "amount_added": amount_paid,
+            "new_balance": round(current_user.balance, 2),
+            "verification": verification_data
+        }), 200
+
     else:
         payment.status = "failed"
-    
-    db.session.commit()
-    return jsonify(verification_data)
+        db.session.commit()
+        return jsonify({"message": "Payment failed"}), 400
+
 
 
 #paystack webhook

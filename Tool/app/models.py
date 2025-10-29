@@ -7,6 +7,7 @@ class User(db.Model):
     business_name = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(300), unique=True, nullable=False)
     phone = db.Column(db.String(50), unique=True, nullable=False )
+    balance = db.Column(db.Numeric(10,2), nullable=False)
     location = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(400), nullable=False)
     products = db.relationship('Product', backref='user', lazy=True)
