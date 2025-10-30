@@ -21,6 +21,8 @@ from excel_export.excel import excel_export
 from expenses.track import expenses
 from sms.send import sms
 from store.create import store 
+from chatus.contact import chatus
+from blog.write import blog
 
 
 #Telling python to use pymysql
@@ -52,7 +54,7 @@ CORS(app, resources={
 
 app_logger.init_app(app)
 
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=5) 
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=9) 
 
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
@@ -77,6 +79,8 @@ app.register_blueprint(excel_export, url_prefix='/excel_export')
 app.register_blueprint(expenses, url_prefix='/expenses')
 app.register_blueprint(sms, url_prefix='/sms')
 app.register_blueprint(store, url_prefix='/store')
+app.register_blueprint(chatus, url_prefix='/chatus')
+app.register_blueprint(blog, url_prefix=('/blog'))
 
 # Initializing extensions
 db.init_app(app)
