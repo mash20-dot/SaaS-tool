@@ -248,3 +248,4 @@ def api_wa_link():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+    

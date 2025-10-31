@@ -1,10 +1,14 @@
 from flask import jsonify, request, Blueprint
-from app.models import db, Blog
+from app.models import db, Blog, User
+from flask_jwt_extended import jwt_required
+from blog.decorator import role_required
 
 blog = Blueprint('blog', '__name__')
 
 
 @blog.route('/bloglist', methods=['POST'])
+@jwt_required()
+@role_required("admin")
 def bloglist():
 
     data = request.get_json()
