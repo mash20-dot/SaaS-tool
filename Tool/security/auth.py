@@ -1,5 +1,5 @@
 from flask import request, Blueprint, jsonify
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 from app.models import User
 from app.db import db, app_logger 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -135,3 +135,30 @@ def login():
         
         return jsonify({"message":
              "An unexpected error occurred. Please try again later."}), 500
+
+
+@security.route('/reset/password', methods=['PUT'])
+@jwt_required()
+def reset():
+
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(
+        email=current_email
+    ).first()
+
+    if not current_user:
+        return jsonify({
+            "message": "user not found"
+        }), 400
+    
+    data = request.get_json()
+    email = data.get("email")
+    if not email:
+        return jsonify({
+            "message":"email required"
+        }), 400
+    
+    if email != current_user.email:
+        return jsonify({
+            "message": "email not found"
+        }), 400

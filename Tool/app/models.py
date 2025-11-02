@@ -4,6 +4,7 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     firstname = db.Column(db.String(250), nullable=False)
     lastname = db.Column(db.String(250), nullable=False)
+    role = db.Column(db.String(20), default='user', nullable=False)
     business_name = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(300), unique=True, nullable=False)
     phone = db.Column(db.String(50), unique=True, nullable=False )
@@ -83,8 +84,8 @@ class Spent(db.Model):
 
 class SMSHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    business_id = db.Column(db.Integer, nullable=False)
-    recipients = db.Column(db.String(255), nullable=False)
+    user_id = db.Column(db.Integer, nullable=False)
+    recipient = db.Column(db.String(255), nullable=False)
     message = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
