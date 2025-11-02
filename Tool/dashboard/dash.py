@@ -24,14 +24,15 @@ def board():
     all_info = []
     for me in  all_pro:
         all_info.append({
-            #"business_name": me.business_name,
+            "business_name": current_user.business_name,
             "product_name":me.product_name,
             "selling_price":float(me.selling_price),
             "amount_spent":float(me.amount_spent),
             "initial_stock":me.initial_stock,
             "expiration_date":me.expiration_date,
             "remaining_stock":me.remaining_stock,
-            "supplier_info":me.supplier_info
+            "supplier_info":me.supplier_info,
+            "balance":float(current_user.balance)
         })
 
     return jsonify(all_info), 200

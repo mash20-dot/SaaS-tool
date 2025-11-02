@@ -84,8 +84,8 @@ class Spent(db.Model):
 
 class SMSHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    business_id = db.Column(db.Integer, nullable=False)
-    recipients = db.Column(db.String(255), nullable=False)
+    user_id = db.Column(db.Integer, nullable=False)
+    recipient = db.Column(db.String(255), nullable=False)
     message = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
