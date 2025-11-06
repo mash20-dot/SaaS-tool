@@ -66,9 +66,7 @@ class Payment(db.Model):
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    expiry_date = db.Column(db.DateTime)
 
 
 
@@ -119,7 +117,6 @@ class Blog(db.Model):
     content = db.Column(db.TEXT(10000), nullable=False)
     topic = db.Column(db.TEXT(10000), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
 
 
 

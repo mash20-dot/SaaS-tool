@@ -5,7 +5,7 @@ from blog.decorator import role_required
 
 blog = Blueprint('blog', '__name__')
 
-
+#route to post blogs
 @blog.route('/bloglist', methods=['POST'])
 @jwt_required()
 @role_required("admin")
@@ -31,6 +31,7 @@ def bloglist():
         "message":"blog uploaded successfully"
     }), 201
 
+#route to read blogs 
 @blog.route('/list/bloglist', methods=['GET'])
 def list():
 

@@ -16,34 +16,48 @@ from datetime import datetime
 @jwt_required()
 def send():
     current_email = get_jwt_identity()
-    current_user = User.query.filter_by(
-        email=current_email).first()
+    current_user = User.query.filter_by(email=current_email).first()
 
     if not current_user:
-        return jsonify({"message":
-                 "user not found"}), 400
-
-    user_balance = float(current_user.balance or 0)
-    if user_balance < cost_per_sms:
-        return jsonify({"message": 
-            "Your balance is too low to send an SMS. Please top up."}), 403
+        return jsonify({"message": "user not found"}), 400
 
     data = request.get_json()
-    recipient = data.get("recipient")
+    recipients = data.get("recipients") or data.get("recipient")
     message = data.get("message")
 
-    if not recipient or not message:
-        return jsonify({"error": "recipient and message are required"}), 400
+    # Ensure recipients and message exist
+    if not recipients or not message:
+        return jsonify({"error": "recipients and message are required"}), 400
+
+    # Always make recipients a list
+    if isinstance(recipients, str):
+        recipients = [recipients]
 
     # Ghana number validation
     gh_pattern = r"^(?:\+?233|0)[235][0-9]{8}$"
-    if not re.match(gh_pattern, recipient):
-        return jsonify({"error": "Only Ghanaian phone numbers are allowed"}), 400
+    invalid_numbers = [r for r in recipients if not re.match(gh_pattern, r)]
+    if invalid_numbers:
+        return jsonify({
+            "error": f"Invalid Ghanaian numbers: {invalid_numbers}"
+        }), 400
 
+    # Calculate total cost
+    total_cost = cost_per_sms * len(recipients)
+    user_balance = float(current_user.balance or 0)
+
+    if user_balance < total_cost:
+        return jsonify({
+            "message": f"Your balance is too low to send {len(recipients)} SMS. Please top up."
+        }), 403
+
+    # Prepare API request
     sender_name = current_user.business_name
-
     url = "https://sms.arkesel.com/api/v2/sms/send"
-    payload = {"sender": sender_name, "message": message, "recipients": [recipient]}
+    payload = {
+        "sender": sender_name,
+        "message": message,
+        "recipients": recipients
+    }
 
     key = os.getenv("ARKESEL_SMS_KEY")
     headers = {"api-key": key, "Content-Type": "application/json"}
@@ -51,28 +65,33 @@ def send():
     try:
         response = requests.post(url, json=payload, headers=headers)
         data = response.json()
+        status_ok = response.status_code == 200 and data.get("status") == "success"
 
-        # Log SMS regardless of success or fail
-        sms_log = SMSHistory(
-            user_id=current_user.id,
-            recipient=recipient,
-            message=message,
-            status="success" if response.status_code == 200 and data.get("status") == "success" else "failed"
-        )
-        db.session.add(sms_log)
+        # Log each SMS individually
+        for num in recipients:
+            sms_log = SMSHistory(
+                user_id=current_user.id,
+                recipient=num,
+                message=message,
+                status="success" if status_ok else "failed"
+            )
+            db.session.add(sms_log)
 
-        if response.status_code == 200 and data.get("status") == "success":
-            current_user.balance = user_balance - cost_per_sms
+        if status_ok:
+            current_user.balance = user_balance - total_cost
             db.session.commit()
-
             return jsonify({
-                "message": "SMS sent successfully",
+                "message": f"SMS sent successfully to {len(recipients)} recipient(s)",
                 "new_balance": float(current_user.balance),
                 "arkesel_response": data
             }), 200
 
         db.session.commit()
-        return jsonify({"error": "Failed to send SMS", "arkesel_response": data}), response.status_code
+        return jsonify({
+            "error": "Failed to send SMS",
+            "arkesel_response": data
+        }), response.status_code
 
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
