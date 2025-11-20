@@ -54,7 +54,6 @@ def forgot_password():
 
 forgotpassword = Blueprint('forgotpassword', '__name__')
 
-# ... your existing forgot-password endpoint ...
 
 @forgotpassword.route("/reset-password", methods=["POST"])
 def reset_password():

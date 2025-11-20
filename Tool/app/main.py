@@ -22,6 +22,7 @@ from expenses.track import expenses
 from sms.send import sms
 from blog.write import blog
 from forgotpassword.password import forgotpassword
+from password.uppass import password
 
 
 #Telling python to use pymysql
@@ -78,6 +79,7 @@ app.register_blueprint(expenses, url_prefix='/expenses')
 app.register_blueprint(sms, url_prefix='/sms')
 app.register_blueprint(blog, url_prefix=('/blog'))
 app.register_blueprint(forgotpassword, url_prefix='/forgotpassword')
+app.register_blueprint(password, url_prefix='/password')
 
 # Initializing extensions
 db.init_app(app)
