@@ -11,6 +11,8 @@ class User(db.Model):
     balance = db.Column(db.Numeric(10,2), nullable=False)
     location = db.Column(db.String(100), nullable=False)
     password = db.Column(db.String(400), nullable=False)
+    reset_token = db.Column(db.String(255), nullable=True)
+    reset_expires = db.Column(db.DateTime, nullable=True)
     products = db.relationship('Product', backref='user', lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     spent = db.relationship('Spent', backref='user', lazy=True)

@@ -45,10 +45,10 @@ def send():
     total_cost = cost_per_sms * len(recipients)
     user_balance = float(current_user.balance or 0)
 
-    if user_balance < total_cost:
-        return jsonify({
-            "message": f"Your balance is too low to send {len(recipients)} SMS. Please top up."
-        }), 403
+    #if user_balance < total_cost:
+        #return jsonify({
+            #"message": f"Your balance is too low to send {len(recipients)} SMS. Please top up."
+        #}), 403
 
     # Prepare API request
     sender_name = current_user.business_name
