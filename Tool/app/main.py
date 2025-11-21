@@ -43,7 +43,8 @@ CORS(app, resources={
             "https://nkwabiz.com",
             "https://www.nkwabiz.com",
             "https://nkwabiz-frontend-1.onrender.com",
-            "https://saas-tool-mf02.onrender.com" 
+            "https://saas-tool-mf02.onrender.com",
+            "http://localhost:5173/forgot-password"
         ],
         "supports_credentials": True,
         "allow_headers": "*",
