@@ -34,4 +34,5 @@ mysql-connector-python
 flask_migrate
 flask_cors 
 slugify
+resend
 

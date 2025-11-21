@@ -44,8 +44,7 @@ def initialize_payment():
         amount=amount,
         reference=reference,
         status="pending",
-        created_at=datetime.utcnow(),
-        expiry_date=datetime.utcnow() + timedelta(days=30)
+        created_at=datetime.utcnow()
     )
     
     db.session.add(payment)

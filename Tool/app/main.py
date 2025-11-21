@@ -20,9 +20,9 @@ from payment.pay import payment
 from excel_export.excel import excel_export
 from expenses.track import expenses
 from sms.send import sms
-from store.create import store 
-from chatus.contact import chatus
 from blog.write import blog
+from forgotpassword.password import forgotpassword
+from password.uppass import password
 
 
 #Telling python to use pymysql
@@ -66,8 +66,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PAYSTACK_SECRET_KEY'] = os.getenv('PAYSTACK_SECRET_KEY')
 app.config['ARKESEL_SMS_KEY'] = os.getenv('ARKESEL_SMS_KEY')
-
-
+app.config['RESEND_API_KEY'] = os.getenv('RESEND_API_KEY')
 
 
 app.register_blueprint(security, url_prefix='/security')
@@ -78,9 +77,9 @@ app.register_blueprint(payment, url_prefix='/payment')
 app.register_blueprint(excel_export, url_prefix='/excel_export')
 app.register_blueprint(expenses, url_prefix='/expenses')
 app.register_blueprint(sms, url_prefix='/sms')
-app.register_blueprint(store, url_prefix='/store')
-app.register_blueprint(chatus, url_prefix='/chatus')
 app.register_blueprint(blog, url_prefix=('/blog'))
+app.register_blueprint(forgotpassword, url_prefix='/forgotpassword')
+app.register_blueprint(password, url_prefix='/password')
 
 # Initializing extensions
 db.init_app(app)
@@ -91,10 +90,8 @@ migrate.init_app(app, db)
 
 
 
-
-
-with app.app_context():
-    db.create_all()
+#with app.app_context():
+    #db.create_all()
 
 
 if __name__ == '__main__':
