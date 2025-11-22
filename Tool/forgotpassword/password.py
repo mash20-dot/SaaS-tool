@@ -12,9 +12,6 @@ forgotpassword = Blueprint('forgotpassword', __name__)
 resend.api_key = os.getenv('RESEND_API_KEY')
 
 
-# ------------------------------
-# FORGOT PASSWORD (ALLOW OPTIONS)
-# ------------------------------
 @forgotpassword.route("/forgot-password", methods=["POST", "OPTIONS"])
 def forgot_password():
     if request.method == "OPTIONS":
@@ -52,9 +49,7 @@ def forgot_password():
     return jsonify({"message": "Password reset email sent!"}), 200
 
 
-# ------------------------------
-# RESET PASSWORD (ALLOW OPTIONS)
-# ------------------------------
+
 @forgotpassword.route("/reset-password", methods=["POST", "OPTIONS"])
 def reset_password():
     if request.method == "OPTIONS":

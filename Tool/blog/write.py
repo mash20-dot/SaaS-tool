@@ -8,9 +8,9 @@ blog = Blueprint('blog', __name__)  # Fixed: __name__ without quotes
 
 # Helper function to check if user is admin
 def is_admin():
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-    return user and user.is_admin
+    email = get_jwt_identity()
+    user = User.query.filter_by(email=email).first()
+    return user and user.role
 
 
 # ------------------------------
@@ -75,8 +75,15 @@ def create_blog():
 @jwt_required()
 @role_required("admin")
 def get_all_posts():
-    if request.method == "OPTIONS":
-        return jsonify({"message": "Preflight OK"}), 200
+    #if request.method == "OPTIONS":
+        #return jsonify({"message": "Preflight OK"}), 200
+    
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(email=current_email).first()
+    if not current_user:
+        return jsonify({
+            "message": "user not found"
+        }), 400
     
     posts = Blog.query.order_by(Blog.created_at.desc()).all()
     
@@ -84,7 +91,7 @@ def get_all_posts():
     for post in posts:
         blogs.append({
             "id": post.id,
-            "title": post.topic,  # Using 'title' for consistency with frontend
+            "title": post.topic, 
             "content": post.content,
             "excerpt": post.excerpt,
             "author": post.author,
@@ -103,6 +110,7 @@ def get_all_posts():
 def get_published_posts():
     if request.method == "OPTIONS":
         return jsonify({"message": "Preflight OK"}), 200
+
     
     posts = Blog.query.filter_by(published=True).order_by(Blog.created_at.desc()).all()
     
@@ -158,13 +166,21 @@ def get_single_post(post_id):
 @jwt_required()
 @role_required("admin")
 def update_post(post_id):
-    if request.method == "OPTIONS":
-        return jsonify({"message": "Preflight OK"}), 200
+    #if request.method == "OPTIONS":
+        #return jsonify({"message": "Preflight OK"}), 200
+    
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(email=current_email).first()
+
+    if not current_user:
+        return jsonify({
+            "message": "user not found"
+        }), 400
     
     post = Blog.query.get_or_404(post_id)
     data = request.get_json()
     
-    topic = data.get("title", post.topic).strip()  # Frontend sends 'title'
+    topic = data.get("title", post.topic).strip()  
     content = data.get("content", post.content).strip()
     excerpt = data.get("excerpt", post.excerpt).strip()
     image = data.get("image", post.image)
@@ -201,6 +217,13 @@ def toggle_publish(post_id):
     if request.method == "OPTIONS":
         return jsonify({"message": "Preflight OK"}), 200
     
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(email=current_email).first()
+    if not current_user:
+        return jsonify({
+            "message": "user not found "
+        }), 400
+    
     post = Blog.query.get_or_404(post_id)
     data = request.get_json()
     
@@ -221,9 +244,19 @@ def toggle_publish(post_id):
 @jwt_required()
 @role_required("admin")
 def delete_post(post_id):
-    if request.method == "OPTIONS":
-        return jsonify({"message": "Preflight OK"}), 200
+    #if request.method == "OPTIONS":
+        #return jsonify({"message": "Preflight OK"}), 200
     
+    current_email = get_jwt_identity()
+
+    current_user = User.query.filter_by(email=current_email).first()
+    if not current_user:
+        return jsonify({
+            "message": "user not found "
+        }), 400
+
+
+
     post = Blog.query.get_or_404(post_id)
     
     db.session.delete(post)
@@ -235,15 +268,15 @@ def delete_post(post_id):
 # ------------------------------
 # LEGACY ROUTES (for backward compatibility)
 # ------------------------------
-@blog.route('/bloglist', methods=['POST', 'OPTIONS'])
-@jwt_required()
-@role_required("admin")
-def bloglist_legacy():
-    """Legacy endpoint - redirects to new create_blog"""
-    return create_blog()
+#@blog.route('/bloglist', methods=['POST', 'OPTIONS'])
+#@jwt_required()
+#@role_required("admin")
+#def bloglist_legacy():
+    #"""Legacy endpoint - redirects to new create_blog"""
+    #return create_blog()
 
 
-@blog.route('/list/bloglist', methods=['GET', 'OPTIONS'])
-def list_legacy():
-    """Legacy endpoint - redirects to new get_published_posts"""
-    return get_published_posts()
+#@blog.route('/list/bloglist', methods=['GET', 'OPTIONS'])
+#def list_legacy():
+    #"""Legacy endpoint - redirects to new get_published_posts"""
+    #return get_published_posts()
