@@ -23,18 +23,25 @@ def create_blog():
     if request.method == "OPTIONS":
         return jsonify({"message": "Preflight OK"}), 200
 
+    # Get author from current user
+    email = get_jwt_identity()
+    user = User.query.filter_by(email=email).first()
+    
+    if not user:
+        return jsonify({
+            "message": "user not found"
+        }), 400
+
+
     data = request.get_json()
     topic = data.get("topic", "").strip()
     content = data.get("content", "").strip()
     excerpt = data.get("excerpt", "").strip()
     image = data.get("image", "")
     published = data.get("published", False)
-
-    # Get author from current user
-    email = get_jwt_identity()
-    user = User.query.filter_by(email=email).first()
     author = user.business_name or user.email
 
+   
     # Validation
     if not topic or len(topic) < 5:
         return jsonify({"error": "Topic must be at least 5 characters"}), 400
