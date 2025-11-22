@@ -20,12 +20,10 @@ def is_admin():
 @jwt_required()
 @role_required("admin")
 def create_blog():
-    if request.method == "OPTIONS":
-        return jsonify({"message": "Preflight OK"}), 200
-
-    # Get author from current user
-    email = get_jwt_identity()
-    user = User.query.filter_by(email=email).first()
+    
+     # Get author from current user
+    current_email = get_jwt_identity()
+    user = User.query.filter_by(email=current_email).first()
     
     if not user:
         return jsonify({
