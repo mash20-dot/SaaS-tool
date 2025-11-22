@@ -35,6 +35,7 @@ def forgot_password():
     db.session.commit()
 
     reset_link = f"https://nkwabiz.com/reset-password?token={token}"
+    #reset_link = f"https://nkwabiz-frontend-1.onrender.com/reset-password?token={token}"
 
     resend.Emails.send({
         "from": "Nkwabiz <info@nkwabiz.com>",
