@@ -169,8 +169,8 @@ def user_info():
     if request.method == "OPTIONS":
         return jsonify({"message": "Preflight OK"}), 200
     
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    email = get_jwt_identity()
+    user = User.query.filter_by(email=email).first()
     
     if not user:
         return jsonify({"error": "User not found"}), 404
@@ -178,5 +178,5 @@ def user_info():
     return jsonify({
         "email": user.email,
         "business_name": user.business_name,
-        "admin": user.admin
+        "role": user.role
     }), 200
