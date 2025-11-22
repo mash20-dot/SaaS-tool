@@ -40,8 +40,8 @@ def create_blog():
 
    
     # Validation
-    if not topic or len(topic) < 5:
-        return jsonify({"error": "Topic must be at least 5 characters"}), 400
+    #if not topic or len(topic) < 5:
+        #return jsonify({"error": "Topic must be at least 5 characters"}), 400
     
     if not content or len(content) < 50:
         return jsonify({"error": "Content must be at least 50 characters"}), 400
