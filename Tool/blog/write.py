@@ -12,7 +12,6 @@ def is_admin():
     user = User.query.filter_by(email=email).first()
     return user and user.role
 
-
 # ------------------------------
 # CREATE BLOG POST (ADMIN ONLY)
 # ------------------------------
