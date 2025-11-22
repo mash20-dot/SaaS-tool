@@ -162,3 +162,21 @@ def reset():
         return jsonify({
             "message": "email not found"
         }), 400
+    
+@security.route("/user-info", methods=["GET", "OPTIONS"])
+@jwt_required()
+def user_info():
+    if request.method == "OPTIONS":
+        return jsonify({"message": "Preflight OK"}), 200
+    
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    return jsonify({
+        "email": user.email,
+        "business_name": user.business_name,
+        "admin": user.admin
+    }), 200

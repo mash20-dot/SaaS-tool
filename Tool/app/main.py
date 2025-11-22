@@ -52,6 +52,7 @@ CORS(app, resources={
 })
 
 
+
 app_logger.init_app(app)
 
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=9) 
@@ -90,8 +91,8 @@ migrate.init_app(app, db)
 
 
 
-#with app.app_context():
-    #db.create_all()
+with app.app_context():
+    db.create_all()
 
 
 if __name__ == '__main__':
