@@ -31,8 +31,8 @@ def create_blog():
     published = data.get("published", False)
 
     # Get author from current user
-    user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    email = get_jwt_identity()
+    user = User.query.filter_by(email=email).first()
     author = user.business_name or user.email
 
     # Validation
