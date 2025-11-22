@@ -116,11 +116,15 @@ class Store_product(db.Model):
 
 class Blog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.TEXT(10000), nullable=False)
-    topic = db.Column(db.TEXT(10000), nullable=False)
+    topic = db.Column(db.String(255), nullable=False) 
+    content = db.Column(db.Text, nullable=False)
+    excerpt = db.Column(db.String(500), nullable=False) 
+    author = db.Column(db.String(100), nullable=False)
+    image = db.Column(db.String(500), nullable=True)
+    published = db.Column(db.Boolean, default=False) 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
 
    
 
