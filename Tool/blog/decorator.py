@@ -10,12 +10,14 @@ def role_required(*allowed_roles):
         @wraps(fn)
         #accepting any kind of input in the decorated function
         def decorated(*args, **kwargs):
-            user = User.query.filter_by(email=get_jwt_identity()).first()
+            current_email = get_jwt_identity()
 
-            if not user:
+            current_user = User.query.filter_by(email=current_email).first()
+
+            if not current_user:
                 return jsonify({"message": "User not found"}), 404
 
-            if not user or user.role not in allowed_roles:
+            if not current_user or current_user.role not in allowed_roles:
                 return jsonify({"message": "Access denied"}), 403
 
             return fn(*args, **kwargs)
