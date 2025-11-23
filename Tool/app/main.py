@@ -34,6 +34,8 @@ app = Flask(__name__)
 
 from flask_cors import CORS
 
+
+# CORS Configuration (this should be in your main app file, not in the route)
 CORS(app, resources={
     r"/*": {
         "origins": [
@@ -46,11 +48,10 @@ CORS(app, resources={
             "https://saas-tool-mf02.onrender.com"
         ],
         "supports_credentials": True,
-        "allow_headers": "*",
+        "allow_headers": ["Content-Type", "Authorization"],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
     }
 })
-
 
 
 app_logger.init_app(app)
