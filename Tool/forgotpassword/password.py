@@ -12,9 +12,6 @@ forgotpassword = Blueprint('forgotpassword', __name__)
 resend.api_key = os.getenv('RESEND_API_KEY')
 
 
-# ------------------------------
-# FORGOT PASSWORD (ALLOW OPTIONS)
-# ------------------------------
 @forgotpassword.route("/forgot-password", methods=["POST", "OPTIONS"])
 def forgot_password():
     if request.method == "OPTIONS":
@@ -34,6 +31,7 @@ def forgot_password():
     user.reset_expires = expires_at
     db.session.commit()
 
+    #this is why the frontend testing forgot password is not working
     reset_link = f"https://nkwabiz.com/reset-password?token={token}"
     #reset_link = f"https://nkwabiz-frontend-1.onrender.com/reset-password?token={token}"
 
@@ -51,9 +49,7 @@ def forgot_password():
     return jsonify({"message": "Password reset email sent!"}), 200
 
 
-# ------------------------------
-# RESET PASSWORD (ALLOW OPTIONS)
-# ------------------------------
+
 @forgotpassword.route("/reset-password", methods=["POST", "OPTIONS"])
 def reset_password():
     if request.method == "OPTIONS":

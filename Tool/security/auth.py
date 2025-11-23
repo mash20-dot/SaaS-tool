@@ -23,6 +23,7 @@ def signup():
         phone = data.get("phone")
         location = data.get("location")
         password = data.get("password")
+        currency = data.get("currency")
 
 
 
@@ -70,6 +71,7 @@ def signup():
             email=email,
             phone=phone,
             location=location,
+            currency=currency,
             password=hashed_password
         )
 
@@ -162,3 +164,24 @@ def reset():
         return jsonify({
             "message": "email not found"
         }), 400
+    
+@security.route("/user-info", methods=["GET", "OPTIONS"])
+@jwt_required()
+def user_info():
+    if request.method == "OPTIONS":
+        return jsonify({"message": "Preflight OK"}), 200
+    
+    email = get_jwt_identity()
+    user = User.query.filter_by(email=email).first()
+    
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    
+    return jsonify({
+        "email": user.email,
+        "business_name": user.business_name,
+        "role": user.role,
+        "currency": user.currency,
+        "firstname": user.firstname,
+        "lastname": user.lastname
+    }), 200

@@ -10,6 +10,7 @@ class User(db.Model):
     phone = db.Column(db.String(50), unique=True, nullable=False )
     balance = db.Column(db.Numeric(10,2), nullable=False)
     location = db.Column(db.String(100), nullable=False)
+    currency = db.Column(db.String(3), default='GHS', server_default='GHS')
     password = db.Column(db.String(400), nullable=False)
     reset_token = db.Column(db.String(255), nullable=True)
     reset_expires = db.Column(db.DateTime, nullable=True)
@@ -116,11 +117,15 @@ class Store_product(db.Model):
 
 class Blog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.TEXT(10000), nullable=False)
-    topic = db.Column(db.TEXT(10000), nullable=False)
+    topic = db.Column(db.String(255), nullable=False) 
+    content = db.Column(db.Text, nullable=False)
+    excerpt = db.Column(db.String(500), nullable=False) 
+    author = db.Column(db.String(100), nullable=False)
+    image = db.Column(db.String(500), nullable=True)
+    published = db.Column(db.Boolean, default=False) 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
 
    
 
