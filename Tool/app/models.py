@@ -10,6 +10,7 @@ class User(db.Model):
     phone = db.Column(db.String(50), unique=True, nullable=False )
     balance = db.Column(db.Numeric(10,2), nullable=False)
     location = db.Column(db.String(100), nullable=False)
+    currency = db.Column(db.String(3), default='GHS', server_default='GHS')
     password = db.Column(db.String(400), nullable=False)
     reset_token = db.Column(db.String(255), nullable=True)
     reset_expires = db.Column(db.DateTime, nullable=True)

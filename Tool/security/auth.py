@@ -23,6 +23,7 @@ def signup():
         phone = data.get("phone")
         location = data.get("location")
         password = data.get("password")
+        currency = data.get("currency")
 
 
 
@@ -70,6 +71,7 @@ def signup():
             email=email,
             phone=phone,
             location=location,
+            currency=currency,
             password=hashed_password
         )
 
@@ -178,5 +180,6 @@ def user_info():
     return jsonify({
         "email": user.email,
         "business_name": user.business_name,
-        "role": user.role
+        "role": user.role,
+        "currency": user.currency
     }), 200
