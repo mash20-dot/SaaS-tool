@@ -181,5 +181,7 @@ def user_info():
         "email": user.email,
         "business_name": user.business_name,
         "role": user.role,
-        "currency": user.currency
+        "currency": user.currency,
+        "firstname": user.firstname,
+        "lastname": user.lastname
     }), 200
