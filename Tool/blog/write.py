@@ -31,7 +31,8 @@ def create_blog():
 
     data = request.get_json()
     
-    topic = data.get("topic", "").strip()
+    # CHANGED: Get "title" instead of "topic" to match frontend
+    title = data.get("title", "").strip()
     content = data.get("content", "").strip()
     excerpt = data.get("excerpt", "").strip()
     image = data.get("image", "").strip()  
@@ -39,8 +40,9 @@ def create_blog():
     author = user.business_name or user.email
 
     
-    # Validation - UNCOMMENTED and fixed
-    if not topic or len(topic) < 5:
+    
+    # Validation
+    if not title or len(title) < 5:
         return jsonify({"error": "Title must be at least 5 characters"}), 400
     
     if not content or len(content) < 50:
@@ -48,15 +50,10 @@ def create_blog():
     
     if not excerpt or len(excerpt) < 20:
         return jsonify({"error": "Excerpt must be at least 20 characters"}), 400
-    print("=" * 50)
-    print("Received data:", data)
-    print("Topic value:", repr(topic))
-    print("Topic length:", len(topic))
-    print("=" * 50)
 
-    
+    # CHANGED: Map "title" to "topic" column in database
     new_blog = Blog(
-        topic=topic,  
+        topic=title,  # Frontend sends "title", database stores in "topic" column
         content=content,
         excerpt=excerpt,
         image=image if image else None, 
@@ -71,8 +68,6 @@ def create_blog():
         "message": "Blog post created successfully",
         "post_id": new_blog.id
     }), 201
-
-
 # ------------------------------
 # GET ALL POSTS (ADMIN - includes drafts)
 # ------------------------------
