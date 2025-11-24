@@ -38,6 +38,12 @@ def create_blog():
     published = data.get("published", False)
     author = user.business_name or user.email
 
+    print("=" * 50)
+    print("Received data:", data)
+    print("Topic value:", repr(topic))
+    print("Topic length:", len(topic))
+    print("=" * 50)
+
     # Validation - UNCOMMENTED and fixed
     if not topic or len(topic) < 5:
         return jsonify({"error": "Title must be at least 5 characters"}), 400
