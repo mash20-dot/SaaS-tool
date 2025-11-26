@@ -1,5 +1,6 @@
 from .db import db
 from datetime import datetime
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     firstname = db.Column(db.String(250), nullable=False)
@@ -19,7 +20,6 @@ class User(db.Model):
     spent = db.relationship('Spent', backref='user', lazy=True)
     store = db.relationship('Store', back_populates='owner')
     store_product = db.relationship('Store_product', backref='user', lazy=True)
-
 
 class Product(db.Model):
 
@@ -90,7 +90,6 @@ class SMSHistory(db.Model):
     message = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
 
 class Store(db.Model):
     id = db.Column(db.Integer, primary_key=True)

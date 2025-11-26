@@ -7,7 +7,7 @@ from datetime import datetime
 
 sms = Blueprint("sms", "__name__")
 
-cost_per_sms = float("0.15")
+cost_per_sms = float("0.20")
 
 import re
 from datetime import datetime
@@ -16,7 +16,8 @@ from datetime import datetime
 @jwt_required()
 def send():
     current_email = get_jwt_identity()
-    current_user = User.query.filter_by(email=current_email).first()
+    current_user = User.query.filter_by(
+        email=current_email).first()
 
     if not current_user:
         return jsonify({"message": "user not found"}), 400
@@ -25,11 +26,12 @@ def send():
     recipients = data.get("recipients") or data.get("recipient")
     message = data.get("message")
 
-    # Ensure recipients and message exist
     if not recipients or not message:
-        return jsonify({"error": "recipients and message are required"}), 400
+        return jsonify({"error":
+             "recipients and message are required"
+        }), 400
 
-    # Always make recipients a list
+    #making recipients a list
     if isinstance(recipients, str):
         recipients = [recipients]
 
@@ -45,10 +47,10 @@ def send():
     total_cost = cost_per_sms * len(recipients)
     user_balance = float(current_user.balance or 0)
 
-    #if user_balance < total_cost:
-        #return jsonify({
-            #"message": f"Your balance is too low to send {len(recipients)} SMS. Please top up."
-        #}), 403
+    if user_balance < total_cost:
+        return jsonify({
+            "message": f"Your balance is too low to send {len(recipients)} SMS. Please top up."
+        }), 403
 
     # Prepare API request
     sender_name = current_user.business_name
@@ -81,7 +83,7 @@ def send():
             current_user.balance = user_balance - total_cost
             db.session.commit()
             return jsonify({
-                "message": f"SMS sent successfully to {len(recipients)} recipient(s)",
+                "message": f"SMS sent successfully to {len(recipients)} recipient(s), your sms is being processed at the background and will be delivered soon",
                 "new_balance": float(current_user.balance),
                 "arkesel_response": data
             }), 200
@@ -95,3 +97,31 @@ def send():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+    
+@sms.route('/all/sms', methods=['GET'])
+@jwt_required()
+def all_sms():
+
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(
+        email=current_email
+    ).first()
+
+    if not current_user:
+        return jsonify({
+            "message": "user not found"
+        }), 400
+    
+    get_all_sms_details = SMSHistory.query.filter_by(
+        user_id=current_user.id
+    ).all()
+
+    history = []
+    for me in get_all_sms_details:
+        history.append({
+            "id": me.id,
+            "status": me.status,
+            "recipients": me.recipient,
+            "message": me.message
+        })
+    return jsonify (history), 200
