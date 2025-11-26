@@ -99,7 +99,7 @@ class Store(db.Model):
     whatsapp_business_number = db.Column(db.String(20), nullable=False)
     logo_url = db.Column(db.String(255))
     cover_url = db.Column(db.String(255))
-    description = db.Column(db.String(300))
+    store_description = db.Column(db.String(300))
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     owner = db.relationship('User', back_populates='store')
