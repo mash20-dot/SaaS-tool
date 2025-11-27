@@ -56,7 +56,7 @@ CORS(app, resources={
 
 app_logger.init_app(app)
 
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=9) 
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=80) 
 
 app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')

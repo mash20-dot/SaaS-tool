@@ -20,7 +20,7 @@ def is_admin():
 @role_required("admin")
 def create_blog():
     
-     # Get author from current user
+    # Get author from current user
     current_email = get_jwt_identity()
     user = User.query.filter_by(email=current_email).first()
     
@@ -29,31 +29,34 @@ def create_blog():
             "message": "user not found"
         }), 400
 
-
     data = request.get_json()
-    topic = data.get("topic", "").strip()
+    
+    # CHANGED: Get "title" instead of "topic" to match frontend
+    title = data.get("title", "").strip()
     content = data.get("content", "").strip()
     excerpt = data.get("excerpt", "").strip()
-    image = data.get("image", "")
+    image = data.get("image", "").strip()  
     published = data.get("published", False)
     author = user.business_name or user.email
 
-   
+    
+    
     # Validation
-    #if not topic or len(topic) < 5:
-        #return jsonify({"error": "Topic must be at least 5 characters"}), 400
+    if not title or len(title) < 5:
+        return jsonify({"error": "Title must be at least 5 characters"}), 400
     
     if not content or len(content) < 50:
         return jsonify({"error": "Content must be at least 50 characters"}), 400
     
     if not excerpt or len(excerpt) < 20:
         return jsonify({"error": "Excerpt must be at least 20 characters"}), 400
-    
+
+    # CHANGED: Map "title" to "topic" column in database
     new_blog = Blog(
-        topic=topic,
+        topic=title,  # Frontend sends "title", database stores in "topic" column
         content=content,
         excerpt=excerpt,
-        image=image,
+        image=image if image else None, 
         author=author,
         published=published
     )
@@ -65,10 +68,6 @@ def create_blog():
         "message": "Blog post created successfully",
         "post_id": new_blog.id
     }), 201
-
-
-
-
 # ------------------------------
 # GET ALL POSTS (ADMIN - includes drafts)
 # ------------------------------
@@ -92,7 +91,7 @@ def get_all_posts():
     for post in posts:
         blogs.append({
             "id": post.id,
-            "title": post.topic, 
+            "topic": post.topic, 
             "content": post.content,
             "excerpt": post.excerpt,
             "author": post.author,
@@ -119,7 +118,7 @@ def get_published_posts():
     for post in posts:
         blogs.append({
             "id": post.id,
-            "title": post.topic,
+            "topic": post.topic,
             "excerpt": post.excerpt,
             "author": post.author,
             "image": post.image,
@@ -150,7 +149,7 @@ def get_single_post(post_id):
     
     return jsonify({
         "id": post.id,
-        "title": post.topic,
+        "topic": post.topic,
         "content": post.content,
         "excerpt": post.excerpt,
         "author": post.author,
@@ -181,7 +180,7 @@ def update_post(post_id):
     post = Blog.query.get_or_404(post_id)
     data = request.get_json()
     
-    topic = data.get("title", post.topic).strip()  
+    topic = data.get("topic", post.topic).strip()  
     content = data.get("content", post.content).strip()
     excerpt = data.get("excerpt", post.excerpt).strip()
     image = data.get("image", post.image)
