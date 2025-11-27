@@ -5,6 +5,7 @@ from .db import db, app_logger, migrate
 from flask_cors import CORS
 import pymysql
 import os
+import cloudinary
 from dotenv import load_dotenv
 load_dotenv()
 import sys
@@ -70,6 +71,16 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PAYSTACK_SECRET_KEY'] = os.getenv('PAYSTACK_SECRET_KEY')
 app.config['ARKESEL_SMS_KEY'] = os.getenv('ARKESEL_SMS_KEY')
 app.config['RESEND_API_KEY'] = os.getenv('RESEND_API_KEY')
+app.config['CLOUDINARY_API_KEY'] = os.getenv('CLOUDINARY_API_KEY')
+app.config['CLOUDINARY_API_SECRET'] = os.getenv('CLOUDINARY_API_SECRET')
+
+# Configuration       
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDINARY_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET'),
+    secure=True
+)
 
 
 app.register_blueprint(security, url_prefix='/security')

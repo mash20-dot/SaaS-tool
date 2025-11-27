@@ -96,9 +96,8 @@ class Store(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     store_name = db.Column(db.String(100), nullable=False)
     slug = db.Column(db.String(120), unique=True, nullable=False)
-    whatsapp_business_number = db.Column(db.String(20), nullable=False)
     logo_url = db.Column(db.String(255))
-    cover_url = db.Column(db.String(255))
+    banner_url = db.Column(db.String(255))
     store_description = db.Column(db.String(300))
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -111,7 +110,10 @@ class Store_product(db.Model):
     product_name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(150))
     amount = db.Column(db.Numeric(10,2))
-    logo_url = db.Column(db.String(300))
+    product_logo_url = db.Column(db.String(300))
+    product_logo_url_1 = db.Column(db.String(300))
+    product_image_url_2 = db.Column(db.String(300))
+    product_image_url_3 = db.Column(db.String(300))
 
 
 class Blog(db.Model):
