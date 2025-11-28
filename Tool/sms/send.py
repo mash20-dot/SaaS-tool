@@ -133,37 +133,40 @@ def send_sms():
             "details": str(e)
         }), 500
 
-@sms.route("/api/sms/dlr", methods=["GET", "POST"])  
+@sms.route("/api/sms/dlr", methods=["GET", "POST"])  # ✅ FIXED: Accept GET requests
 def dlr_webhook():
     """
     Delivery Receipt webhook from Arkesel
-    They send: GET /api/sms/dlr?sms_id=xxx&status=DELIVERED
+    Arkesel sends: GET /api/sms/dlr?sms_id=xxx&status=DELIVERED
     """
     try:
-        # Log the request
+        # Log the request for debugging
         print("=" * 50)
         print("📨 WEBHOOK RECEIVED!")
         print(f"Method: {request.method}")
+        print(f"Query params: {dict(request.args)}")
         print(f"Headers: {dict(request.headers)}")
-        print(f"Query params: {request.args}")
-        print(f"Body: {request.get_json(silent=True)}")
+        if request.method == "POST":
+            print(f"Body: {request.get_json(silent=True)}")
         print("=" * 50)
         
-        # Get data from query params (GET) or JSON body (POST)
+        # ✅ FIXED: Get data from query params (GET) or JSON body (POST)
         if request.method == "GET":
-            message_id = request.args.get("sms_id") or request.args.get("message_id")
+            # Arkesel sends data as query parameters
+            message_id = request.args.get("sms_id") or request.args.get("message_id") or request.args.get("id")
             status = request.args.get("status")
         else:
-            data = request.get_json()
+            # Fallback for POST requests
+            data = request.get_json(silent=True)
             if not data:
                 return jsonify({"error": "No data received"}), 400
             message_id = data.get("sms_id") or data.get("message_id") or data.get("id")
             status = data.get("status")
 
-        print(f"📝 Processing: message_id={message_id}, status={status}")
+        print(f"📝 Extracted: message_id={message_id}, status={status}")
 
         if not message_id or not status:
-            print(f"❌ Missing fields")
+            print(f"❌ Missing required fields")
             return jsonify({
                 "error": "Missing required fields: message_id/sms_id and status"
             }), 400
@@ -173,6 +176,9 @@ def dlr_webhook():
 
         if not sms_record:
             print(f"⚠️ Message ID {message_id} not found in database")
+            # Check what message IDs we have
+            all_ids = [s.message_id for s in SMSHistory.query.limit(10).all()]
+            print(f"Recent message IDs in DB: {all_ids}")
             return jsonify({
                 "message": "Message ID not found in records"
             }), 404
@@ -184,30 +190,34 @@ def dlr_webhook():
                 "message": "Status already processed"
             }), 200
 
-        # Update status (convert to lowercase)
+        # ✅ FIXED: Convert status to lowercase (Arkesel sends DELIVERED, FAILED, etc.)
         new_status = status.lower()
+        old_status = sms_record.status
         sms_record.status = new_status
-        print(f"✅ Updating status to: {new_status}")
+        print(f"✅ Updating status: {old_status} -> {new_status}")
 
         # Deduct balance ONLY if delivered successfully
         if new_status == "delivered":
             user = User.query.get(sms_record.user_id)
             if user:
                 current_balance = float(user.balance or 0)
-                user.balance = current_balance - cost_per_sms
+                new_balance = current_balance - cost_per_sms
                 
                 # Prevent negative balance (safety check)
-                if user.balance < 0:
-                    user.balance = 0
+                if new_balance < 0:
+                    new_balance = 0
                 
-                print(f"💰 Balance updated: {current_balance} -> {user.balance}")
+                user.balance = new_balance
+                print(f"💰 Balance deducted: {current_balance} -> {new_balance}")
 
         db.session.commit()
-        print("✅ DLR processed successfully")
+        print("✅ DLR processed successfully!")
+        print("=" * 50)
 
         return jsonify({
             "message": "DLR processed successfully",
-            "status": new_status
+            "status": new_status,
+            "message_id": message_id
         }), 200
 
     except Exception as e:
@@ -215,12 +225,11 @@ def dlr_webhook():
         print(f"❌ ERROR: {str(e)}")
         import traceback
         traceback.print_exc()
+        print("=" * 50)
         return jsonify({
             "error": "Webhook processing failed",
             "details": str(e)
         }), 500
-    
-
 @sms.route('/all/sms', methods=['GET'])
 @jwt_required()
 def all_sms():
