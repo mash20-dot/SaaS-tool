@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app.models import User, Product, SalesHistory, Payment
-from app.db import db
+from app.db import db, app_logger
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from datetime import datetime
 
@@ -24,6 +24,9 @@ def stock():
     quantity = int(data.get("quantity"))
     product_name = data.get("product_name")
 
+    app_logger.sales_entering_attempt(current_user, request.remote_addr)
+
+
     product = Product.query.filter_by(
         product_name=product_name).first()
     
@@ -34,6 +37,7 @@ def stock():
         }), 403
 
     if not product:
+        app_logger.sales_entering_failure(current_user, reason="product not found")
         return jsonify({"error":
              "Product not found"}), 404
 
@@ -53,6 +57,9 @@ def stock():
 
     # deduct
     product.remaining_stock -= quantity
+
+    app_logger.sales_entering_success(current_email)
+
     db.session.add(sales)
     db.session.commit()
 
@@ -75,19 +82,7 @@ def stock_alert():
             "user not found"
         }), 400
     
-    #premium = Payment.query.filter_by(
-       # user_id=current_user.id, status="success"
-   # ).order_by(Payment.created_at.desc()).first()
-
-   # if not premium:
-       # return jsonify({"message":
-         #"You do not have a premium subscription. Please upgrade."}), 403
-
-    #if premium.expiry_date < datetime.utcnow():
-       # return jsonify({"message": 
-        #"Your premium has expired. Please renew."}), 403
-
-    
+    app_logger.low_stock_alert_attempt(current_user, request.remote_addr)
    
     products = Product.query.filter_by(
          user_id=current_user.id).all()
@@ -96,12 +91,14 @@ def stock_alert():
     notification = []
     for pro in products:
         if pro.remaining_stock <= pro.reorder_point:
+         app_logger.low_stock_alert_failure(current_user, reason="failed")
          notification.append({
               "product_name":pro.product_name,
               "remaining_stock":pro.remaining_stock,
               "message":
                 f"Low stock! Reoder {pro.product_name}"
          })
+    app_logger.low_stock_alert_success(current_email)
     return jsonify({"alert": notification}),200
 
 
@@ -117,18 +114,8 @@ def history():
     if not current_user:
         return jsonify({"message": "User not found"}), 400
 
-   # premium = Payment.query.filter_by(
-        #user_id=current_user.id, status="success"
-   # ).order_by(Payment.created_at.desc()).first()
-
-    #if not premium:
-        #return jsonify({"message":
-         #"You do not have a premium subscription. Please upgrade."}), 403
-
-    #if premium.expiry_date < datetime.utcnow():
-        #return jsonify({"message":
-            # "Your premium has expired. Please renew."}), 403
-
+    app_logger.sales_analytics_attempt(current_user, request.remote_addr)
+   
     # Fetch all sales history joined with Product
     get_history = (
         db.session.query(SalesHistory, Product)
@@ -138,6 +125,7 @@ def history():
     )
 
     if not get_history:
+        app_logger.sales_analytics_failure(current_user, reason="failed")
         return jsonify({"message":
                  "No sales history found"}), 404
 
@@ -167,6 +155,7 @@ def history():
     total_profit_today = sum(sale.profit for sale in sales_for_recent_date)
     total_sales_today = sum(sale.total_price for sale in sales_for_recent_date)
 
+    app_logger.sales_analytics_success(current_email)
     return jsonify({
         "sales_history": result,
         "summary": {
@@ -176,7 +165,7 @@ def history():
         }
     }), 200
 
-#route to get product sold, for free users
+#route to get product sold
 @stock_manage.route('/product/sold', methods=['GET'])
 @jwt_required()
 def sold():
@@ -185,6 +174,9 @@ def sold():
 
     if not current_user:
         return jsonify({"message": "user not found"}), 400
+
+
+    app_logger.all_sales_attempt(current_user, request.remote_addr)
 
     get_history = (
         db.session.query(SalesHistory, Product)
@@ -196,6 +188,7 @@ def sold():
 
     results = []
     for sale, product in get_history:
+        app_logger.all_sales_failure(current_user, reason="failed")
         results.append({
             "product_name": product.product_name,
             "quantity": sale.quantity,
@@ -203,6 +196,8 @@ def sold():
             "date": sale.created_at
         })
 
+    app_logger.all_sales_success(current_email)
+    
     return jsonify(results), 200
 
 
@@ -219,6 +214,7 @@ def monthly_sales():
     if not current_user:
         return jsonify({"message": "User not found"}), 400
 
+    app_logger.sales_filter_attempt(current_user, request.remote_addr)
 
     year = request.args.get('year', type=int)
     month = request.args.get('month', type=int)
@@ -241,7 +237,7 @@ def monthly_sales():
         .filter(db.extract('year', SalesHistory.created_at) == year)
     )
 
-    # Optional month filter
+    # month filter
     if month:
         query = query.filter(db.extract('month', SalesHistory.created_at) == month)
 
@@ -249,6 +245,7 @@ def monthly_sales():
     results = query.all()
 
     if not results:
+        app_logger.sales_filter_failure(current_user, reason="failed")
         return jsonify({
             "message": f"No sales data found for {year}-{month:02d}"
         }), 404
@@ -262,6 +259,8 @@ def monthly_sales():
         }
         for r in results
     ]
+
+    app_logger.sales_filter_success(current_email)
 
     return jsonify({
         "user": current_user.email,

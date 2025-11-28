@@ -82,14 +82,15 @@ class Spent(db.Model):
     date = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-
 class SMSHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, nullable=False)
     recipient = db.Column(db.String(255), nullable=False)
     message = db.Column(db.Text, nullable=False)
-    status = db.Column(db.String(100))
+    status = db.Column(db.String(100))  # pending, delivered, failed
+    message_id = db.Column(db.String(255))  # Needed for webhook tracking
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 class Store(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -1,5 +1,6 @@
 from flask import jsonify, request, Blueprint
 from app.models import db, Blog, User
+from app.db import app_logger
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from blog.decorator import role_required
 
@@ -107,11 +108,11 @@ def get_all_posts():
 # GET PUBLISHED POSTS (PUBLIC)
 # ------------------------------
 @blog.route('/posts', methods=['GET', 'OPTIONS'])
-def get_published_posts():
+def get_published_posts(current_user):
     if request.method == "OPTIONS":
         return jsonify({"message": "Preflight OK"}), 200
-
     
+
     posts = Blog.query.filter_by(published=True).order_by(Blog.created_at.desc()).all()
     
     blogs = []
@@ -124,7 +125,7 @@ def get_published_posts():
             "image": post.image,
             "created_at": post.created_at.isoformat()
         })
-    
+
     return jsonify({"posts": blogs}), 200
 
 
