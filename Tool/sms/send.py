@@ -218,10 +218,12 @@ def all_sms():
         user_id=current_user.id
     ).order_by(SMSHistory.created_at.desc()).all()
 
-    # Return empty array if no history
-    if not get_all_sms_details:
-        return jsonify([]), 200
-    
+    # Calculate totals
+    total_sms = len(get_all_sms_details)
+    total_delivered = sum(1 for sms in get_all_sms_details if sms.status == "delivered")
+    total_failed = sum(1 for sms in get_all_sms_details if sms.status == "failed")
+    total_pending = sum(1 for sms in get_all_sms_details if sms.status == "pending")
+
     # Format history
     history = []
     for row in get_all_sms_details:
@@ -234,7 +236,13 @@ def all_sms():
             "created_at": row.created_at.strftime("%Y-%m-%d %H:%M:%S") if row.created_at else None
         })
 
-    return jsonify(history), 200
+    return jsonify({
+        "total_sms": total_sms,
+        "total_delivered": total_delivered,
+        "total_failed": total_failed,
+        "total_pending": total_pending,
+        "history": history
+    }), 200
 
 @sms.route('/contact', methods=['GET'])
 @jwt_required()
