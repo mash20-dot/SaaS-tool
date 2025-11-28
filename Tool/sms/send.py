@@ -235,3 +235,35 @@ def all_sms():
         })
 
     return jsonify(history), 200
+
+@sms.route('/contact', methods=['GET'])
+@jwt_required()
+def contact():
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(
+        email=current_email).first()
+
+    if not current_user:
+        return jsonify({
+            "message": "user not found"
+        }), 400
+    
+    # Get all distinct recipients for this user
+    all_contacts = db.session.query(SMSHistory.recipient).filter_by(
+        user_id=current_user.id
+    ).distinct().all()
+
+    if not all_contacts:
+        return jsonify({
+            "message": "you do not have any contacts yet",
+            "contacts": []
+        }), 200  
+    
+    # Extract recipients from query result
+    contacts = [contact[0] for contact in all_contacts]
+    
+    return jsonify({
+        "message": "Contacts retrieved successfully",
+        "contacts": contacts,
+        "total": len(contacts)
+    }), 200
