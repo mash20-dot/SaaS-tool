@@ -237,12 +237,14 @@ def all_sms():
         })
 
     return jsonify({
+        "balance": float(current_user.balance or 0), 
         "total_sms": total_sms,
         "total_delivered": total_delivered,
         "total_failed": total_failed,
         "total_pending": total_pending,
         "history": history
     }), 200
+
 
 @sms.route('/contact', methods=['GET'])
 @jwt_required()
