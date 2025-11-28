@@ -4,13 +4,11 @@ import requests
 from app.models import User, db, SMSHistory
 import os
 from datetime import datetime
+import re
 
 sms = Blueprint("sms", "__name__")
 
 cost_per_sms = float("0.20")
-
-import re
-from datetime import datetime
 
 @sms.route('/api/sms/send', methods=['POST'])
 @jwt_required()
@@ -26,94 +24,216 @@ def send_sms():
     message = data.get("message")
 
     if not recipients or not message:
-        return jsonify({"error": "recipients and message are required"}), 400
+        return jsonify({
+            "error": "recipients and message are required"
+        }), 400
 
-    # Ensure recipients is a list
     if isinstance(recipients, str):
         recipients = [recipients]
 
-    # Ghana number validation
+    # Validate Ghanaian phone numbers
     gh_pattern = r"^(?:\+?233|0)[235][0-9]{8}$"
     invalid_numbers = [r for r in recipients if not re.match(gh_pattern, r)]
     if invalid_numbers:
-        return jsonify({"error": f"Invalid Ghanaian numbers: {invalid_numbers}"}), 400
+        return jsonify({
+            "error": f"Invalid Ghanaian numbers: {invalid_numbers}"
+        }), 400
 
-    # Calculate cost
-    total_cost = cost_per_sms * len(recipients)
+    # Check balance
     user_balance = float(current_user.balance or 0)
+    total_cost = cost_per_sms * len(recipients)
 
     if user_balance < total_cost:
         return jsonify({
             "message": f"Your balance is too low to send {len(recipients)} SMS. Please top up."
         }), 403
 
-    # Prepare Arkesel request
+    # Prepare Arkesel API request
     url = "https://sms.arkesel.com/api/v2/sms/send"
     sender_name = current_user.business_name
     key = os.getenv("ARKESEL_SMS_KEY")
     headers = {"api-key": key, "Content-Type": "application/json"}
 
+    # ✅ CRITICAL: Add your webhook URL here
+    # This tells Arkesel where to send delivery reports
+    webhook_url = os.getenv("WEBHOOK_BASE_URL") + "/sms/api/sms/dlr"
+
     payload = {
         "sender": sender_name,
         "message": message,
-        "recipients": recipients
+        "recipients": recipients,
+        "callback_url": webhook_url  
     }
 
     try:
         response = requests.post(url, json=payload, headers=headers)
-        data = response.json()
+        response_data = response.json()
 
-        # Arkesel success = status: "success"
-        status_ok = (response.status_code == 200 and data.get("status") == "success")
+        # Check if request was successful
+        if response.status_code != 200:
+            return jsonify({
+                "error": "Failed to send SMS",
+                "details": response_data
+            }), response.status_code
 
-        # Deduct balance only if Arkesel accepted the request
-        if status_ok:
-            current_user.balance = user_balance - total_cost
-
-        # Log each SMS as pending (delivery happens later)
-        for num in recipients:
-            sms_log = SMSHistory(
-                user_id=current_user.id,
-                recipient=num,
-                message=message,
-                status="pending",
-                message_id=data.get("message_id")  # STORE FOR WEBHOOK
-            )
-            db.session.add(sms_log)
+        # Parse Arkesel response
+        arkesel_data = response_data.get("data", [])
+        
+        if not isinstance(arkesel_data, list):
+            # Fallback: create records for all recipients
+            for recipient in recipients:
+                sms_log = SMSHistory(
+                    user_id=current_user.id,
+                    recipient=recipient,
+                    message=message,
+                    status="pending",
+                    message_id=None,
+                    created_at=datetime.utcnow()
+                )
+                db.session.add(sms_log)
+        else:
+            # Create SMS history records with Arkesel's message IDs
+            for item in arkesel_data:
+                message_id = item.get("message_id") or item.get("id") or item.get("messageId")
+                recipient = item.get("recipient") or item.get("number") or item.get("phone")
+                initial_status = item.get("status", "pending")
+                
+                if recipient:
+                    sms_log = SMSHistory(
+                        user_id=current_user.id,
+                        recipient=recipient,
+                        message=message,
+                        status=initial_status.lower(),
+                        message_id=str(message_id) if message_id else None,
+                        created_at=datetime.utcnow()
+                    )
+                    db.session.add(sms_log)
 
         db.session.commit()
 
-        if status_ok:
+        successful_count = len(arkesel_data) if isinstance(arkesel_data, list) else len(recipients)
+
+        return jsonify({
+            "message": f"SMS queued for {successful_count} recipient(s). Delivery updates will arrive soon.",
+            "total_sent": successful_count,
+            "total_cost": successful_count * cost_per_sms,
+            "webhook_url": webhook_url  
+        }), 200
+
+    except requests.exceptions.RequestException as e:
+        db.session.rollback()
+        return jsonify({
+            "error": "Failed to communicate with SMS provider",
+            "details": str(e)
+        }), 500
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            "error": "Internal server error",
+            "details": str(e)
+        }), 500
+
+@sms.route("/api/sms/dlr", methods=["POST"])
+def dlr_webhook():
+    """
+    Delivery Receipt webhook from Arkesel
+    Expected payload: {"message_id": "...", "status": "delivered/failed/..."}
+    """
+    try:
+        # Log raw request data
+        print("=" * 50)
+        print("📨 WEBHOOK RECEIVED!")
+        print(f"Headers: {dict(request.headers)}")
+        print(f"Raw data: {request.data}")
+        print(f"JSON data: {request.get_json()}")
+        print("=" * 50)
+        
+        data = request.get_json()
+        
+        if not data:
+            print("❌ No data received")
+            return jsonify({"error": "No data received"}), 400
+        
+        message_id = data.get("message_id") or data.get("id")
+        status = data.get("status")
+        
+        print(f"📝 Processing: message_id={message_id}, status={status}")
+
+        if not message_id or not status:
+            print(f"❌ Missing fields in data: {data}")
             return jsonify({
-                "message": f"SMS successfully queued for {len(recipients)} recipient(s). Messages are pending delivery.",
-                "new_balance": float(current_user.balance)
+                "error": "Missing required fields: message_id and status"
+            }), 400
+
+        # Find the SMS record
+        sms_record = SMSHistory.query.filter_by(message_id=str(message_id)).first()
+
+        if not sms_record:
+            print(f"⚠️ Message ID {message_id} not found in database")
+            return jsonify({
+                "message": "Message ID not found in records"
+            }), 404
+
+        # Prevent duplicate processing
+        if sms_record.status in ["delivered", "failed"]:
+            print(f"ℹ️ Status already processed: {sms_record.status}")
+            return jsonify({
+                "message": "Status already processed"
             }), 200
 
-        return jsonify({"error": "Failed to queue SMS", "arkesel_response": data}), response.status_code
+        # Update status
+        new_status = status.lower()
+        sms_record.status = new_status
+        print(f"✅ Updating status to: {new_status}")
+
+        # Deduct balance ONLY if delivered successfully
+        if new_status == "delivered":
+            user = User.query.get(sms_record.user_id)
+            if user:
+                current_balance = float(user.balance or 0)
+                user.balance = current_balance - cost_per_sms
+                
+                # Prevent negative balance (safety check)
+                if user.balance < 0:
+                    user.balance = 0
+                
+                print(f"💰 Balance updated: {current_balance} -> {user.balance}")
+
+        db.session.commit()
+        print("✅ DLR processed successfully")
+
+        return jsonify({
+            "message": "DLR processed successfully",
+            "status": new_status
+        }), 200
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
-
+        print(f"❌ ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "error": "Webhook processing failed",
+            "details": str(e)
+        }), 500
 @sms.route('/all/sms', methods=['GET'])
 @jwt_required()
 def all_sms():
-
+    """Get all SMS history for the current user"""
     current_email = get_jwt_identity()
     current_user = User.query.filter_by(email=current_email).first()
 
     if not current_user:
         return jsonify({"message": "user not found"}), 400
     
+    # Get all SMS records for this user
     get_all_sms_details = SMSHistory.query.filter_by(
         user_id=current_user.id
     ).order_by(SMSHistory.created_at.desc()).all()
 
-    # If no history found
+    # Return empty array if no history
     if not get_all_sms_details:
-        return jsonify({
-            "message": "You have no SMS history yet."
-        }), 200
+        return jsonify([]), 200
     
     # Format history
     history = []
@@ -123,7 +243,8 @@ def all_sms():
             "status": row.status,
             "recipient": row.recipient,
             "message": row.message,
-            "created_at": row.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            "message_id": row.message_id,
+            "created_at": row.created_at.strftime("%Y-%m-%d %H:%M:%S") if row.created_at else None
         })
 
     return jsonify(history), 200

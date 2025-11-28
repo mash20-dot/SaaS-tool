@@ -71,7 +71,16 @@ class Payment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-
+class SMSHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    recipient = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(100), default='pending') 
+    message_id = db.Column(db.String(255), unique=True, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
 
 class Spent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -82,14 +91,6 @@ class Spent(db.Model):
     date = db.Column(db.DateTime, default=datetime.utcnow)
 
 
-class SMSHistory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
-    recipient = db.Column(db.String(255), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    status = db.Column(db.String(100))  # pending, delivered, failed
-    message_id = db.Column(db.String(255))  # Needed for webhook tracking
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Store(db.Model):
