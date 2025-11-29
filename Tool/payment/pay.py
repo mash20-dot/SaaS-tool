@@ -88,8 +88,7 @@ def initialize_payment():
 @jwt_required()
 def verify_payment(reference):
     current_email = get_jwt_identity()
-    current_user = User.query.filter_by(
-        email=current_email).first()
+    current_user = User.query.filter_by(email=current_email).first()
 
     if not current_user:
         return jsonify({"message": "User not found"}), 404
@@ -109,45 +108,40 @@ def verify_payment(reference):
         return jsonify({"message": "Invalid response from Paystack"}), 500
 
     # Find existing payment
-    payment = Payment.query.filter_by(
-        reference=reference).first()
+    payment = Payment.query.filter_by(reference=reference).first()
     if not payment:
-        return jsonify({"message":
-             "Payment not found"}), 404
-
-    # Prevent reprocessing
-    if payment.status == "success":
-        return jsonify({"message":
-             "Payment already processed"}), 200
+        return jsonify({"message": "Payment not found"}), 404
 
     # Extract Paystack data
     paystack_data = verification_data.get("data", {})
-    if paystack_data.get("status") == "success":
+    payment_status = paystack_data.get("status")
+    
+    if payment_status == "success":
         # Convert pesewas to GHS
         amount_paid = float(paystack_data["amount"]) / 100
 
-        # Update payment status & amount
-        payment.status = "success"
-        payment.amount = amount_paid
-
-        # Update user balance
-        current_user.balance = float(current_user.balance or 0) + float(amount_paid)
-
-        db.session.commit()
+        #FIXED: Only update to pending, don't add to balance yet
+        if payment.status != "success":
+            payment.status = "pending"  # Mark as pending, waiting for webhook
+            payment.amount = amount_paid
+            db.session.commit()
 
         return jsonify({
-            "message": "Payment verified successfully",
-            "amount_added": amount_paid,
-            "new_balance": round(current_user.balance, 2),
+            "message": "Payment verified. Balance will be updated shortly.",
+            "status": payment.status,
+            "amount": amount_paid,
+            "current_balance": round(float(current_user.balance or 0), 2),
             "verification": verification_data
         }), 200
 
     else:
+        # Payment failed
         payment.status = "failed"
         db.session.commit()
-        return jsonify({"message": "Payment failed"}), 400
-
-
+        return jsonify({
+            "message": "Payment failed",
+            "status": "failed"
+        }), 400 
 
 #paystack webhook
 @payment.route("/paystack/webhook", methods=["POST"])
@@ -155,7 +149,6 @@ def paystack_webhook():
     """
     Handles Paystack payment webhooks securely and updates payment status.
     """
-
     try:
         # Verify Paystack signature
         paystack_signature = request.headers.get("x-paystack-signature")
@@ -163,9 +156,9 @@ def paystack_webhook():
 
         if not paystack_signature:
             return jsonify({
-                "status":
-                  "error", 
-                  "message": "Missing signature"}), 400
+                "status": "error", 
+                "message": "Missing signature"
+            }), 400
 
         secret = os.getenv("PAYSTACK_SECRET_KEY", "").encode()
         computed_signature = hmac.new(secret, body, hashlib.sha512).hexdigest()
@@ -188,18 +181,41 @@ def paystack_webhook():
                 return jsonify({"status": "error", "message": "Missing reference"}), 400
 
             payment = Payment.query.filter_by(reference=reference).first()
-            if payment:
-                if payment.status != "success":
-                    payment.status = "success"
-                    db.session.commit()
-            else:
+            if not payment:
                 return jsonify({
-                    f"No Payment record found for reference: {reference}"}), 404
+                    "status": "error",
+                    "message": f"No Payment record found for reference: {reference}"
+                }), 404
+
+            # FIXED: Prevent duplicate processing
+            if payment.status == "success":
+                return jsonify({"status": "success", "message": "Already processed"}), 200
+
+            # FIXED: Extract amount from webhook data
+            amount_paid = float(data.get("amount", 0)) / 100  # Convert pesewas to GHS
+
+            # FIXED: Update payment record
+            payment.status = "success"
+            payment.amount = amount_paid
+
+            #FIXED: Update user balance
+            user = User.query.get(payment.user_id)
+            if user:
+                current_balance = float(user.balance or 0)
+                user.balance = round(current_balance + amount_paid, 2)
+
+            db.session.commit()
+
+            return jsonify({
+                "status": "success",
+                "message": "Payment processed",
+                "amount_added": amount_paid
+            }), 200
 
         elif event_type == "charge.failed":
             if reference:
                 payment = Payment.query.filter_by(reference=reference).first()
-                if payment:
+                if payment and payment.status != "failed":
                     payment.status = "failed"
                     db.session.commit()
 
@@ -207,4 +223,5 @@ def paystack_webhook():
         return jsonify({"status": "success"}), 200
 
     except Exception as e:
+        db.session.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
