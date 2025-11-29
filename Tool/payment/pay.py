@@ -118,7 +118,7 @@ def verify_payment(reference):
     if paystack_status == "success":
         
         return jsonify({
-            "message": "Payment verified successfully! Balance will be updated shortly.",
+            "message": "Payment verified successfully!.",
             "paystack_status": paystack_status,  
             "payment_status": payment.status,   
             "amount": amount_paid,
