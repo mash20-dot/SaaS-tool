@@ -93,6 +93,12 @@ def verify_payment(reference):
     if not current_user:
         return jsonify({"message": "User not found"}), 404
 
+    # Find existing payment
+    payment = Payment.query.filter_by(reference=reference).first()
+    if not payment:
+        return jsonify({"message": "Payment not found"}), 404
+
+    # Check Paystack status (but don't update database yet)
     url = f"https://api.paystack.co/transaction/verify/{reference}"
     headers = {
         "Authorization": f"Bearer {os.getenv('PAYSTACK_SECRET_KEY')}"
@@ -104,44 +110,28 @@ def verify_payment(reference):
         verification_data = response.json()
     except requests.exceptions.RequestException:
         return jsonify({"message": "Error verifying transaction"}), 500
-    except ValueError:
-        return jsonify({"message": "Invalid response from Paystack"}), 500
 
-    # Find existing payment
-    payment = Payment.query.filter_by(reference=reference).first()
-    if not payment:
-        return jsonify({"message": "Payment not found"}), 404
-
-    # Extract Paystack data
     paystack_data = verification_data.get("data", {})
-    payment_status = paystack_data.get("status")
+    paystack_status = paystack_data.get("status")
+    amount_paid = float(paystack_data.get("amount", 0)) / 100
     
-    if payment_status == "success":
-        # Convert pesewas to GHS
-        amount_paid = float(paystack_data["amount"]) / 100
-
-        #FIXED: Only update to pending, don't add to balance yet
-        if payment.status != "success":
-            payment.status = "pending"  # Mark as pending, waiting for webhook
-            payment.amount = amount_paid
-            db.session.commit()
-
+    if paystack_status == "success":
+        
         return jsonify({
-            "message": "Payment verified. Balance will be updated shortly.",
-            "status": payment.status,
+            "message": "Payment verified successfully! Balance will be updated shortly.",
+            "paystack_status": paystack_status,  
+            "payment_status": payment.status,   
             "amount": amount_paid,
-            "current_balance": round(float(current_user.balance or 0), 2),
-            "verification": verification_data
+            "current_balance": round(float(current_user.balance or 0), 2)
         }), 200
-
     else:
-        # Payment failed
-        payment.status = "failed"
-        db.session.commit()
         return jsonify({
-            "message": "Payment failed",
-            "status": "failed"
-        }), 400 
+            "message": "Payment verification failed",
+            "status": paystack_status
+        }), 400
+
+
+
 
 #paystack webhook
 @payment.route("/paystack/webhook", methods=["POST"])
