@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 import requests
-from app.models import User, db, SMSHistory
+from app.models import User, db, SMSHistory, SMScontacts
 import os
 from datetime import datetime
 import re
@@ -246,9 +246,44 @@ def all_sms():
     }), 200
 
 
-@sms.route('/contact', methods=['GET'])
+@sms.route('/contacts', methods=['POST'])
 @jwt_required()
-def contact():
+def contacts():
+
+    current_email = get_jwt_identity()
+    current_user = User.query.filter_by(
+        email=current_email
+    ).first()
+
+    if not current_user:
+        return jsonify({
+            "message":"user not found"
+        }), 400
+    
+    data = request.get_json()
+
+    contact = data.get("contact")
+    category = data.get("category")
+
+    if not contact:
+        return jsonify({
+            "message": "contact is required"
+        }), 400
+    
+    save = SMScontacts(
+        user_id=current_user.id,
+        contact=contact,
+        category=category
+    )
+    db.session.add(save)
+    db.session.commit()
+    return jsonify({
+        "message": "contacts saved successfully"
+    }), 200
+
+@sms.route('/all/contact', methods=['GET'])
+@jwt_required()
+def all_contact():
     current_email = get_jwt_identity()
     current_user = User.query.filter_by(
         email=current_email).first()
@@ -259,9 +294,9 @@ def contact():
         }), 400
     
     # Get all distinct recipients for this user
-    all_contacts = db.session.query(SMSHistory.recipient).filter_by(
+    all_contacts = SMScontacts.query.filter_by(
         user_id=current_user.id
-    ).distinct().all()
+    ).all()
 
     if not all_contacts:
         return jsonify({
@@ -269,11 +304,12 @@ def contact():
             "contacts": []
         }), 200  
     
-    # Extract recipients from query result
-    contacts = [contact[0] for contact in all_contacts]
+    cont = []
+    for me in all_contacts:
+        cont.append({
+            "user_id":current_user.id,
+            "contact":me.contact,
+            "category":me.category
+        })
     
-    return jsonify({
-        "message": "Contacts retrieved successfully",
-        "contacts": contacts,
-        "total": len(contacts)
-    }), 200
+    return jsonify(cont), 200

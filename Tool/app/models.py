@@ -82,6 +82,12 @@ class SMSHistory(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
 
+class SMScontacts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    contact = db.Column(db.String(255), nullable=False)
+    category = db.Column(db.String(255))
+
 class Spent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
@@ -129,5 +135,38 @@ class Blog(db.Model):
     
 
    
+class Services(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    service_name = db.Column(db.String(300))
+    description = db.Column(db.String(400))
+    pricing_type = db.Column(db.String(300))  # fixed, hourly or custom
+    price = db.Column(db.Numeric(10,2))
+
+    # Relationship to sales
+    sales = db.relationship(
+        "Servicesales",
+        back_populates="service",
+        cascade="all, delete-orphan"
+    )
 
 
+class Servicesales(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    services_id = db.Column(
+        db.Integer,
+        db.ForeignKey("services.id"),
+        nullable=False
+    )
+
+    client_name = db.Column(db.String(255))
+    date_time = db.Column(db.String(255))
+    income_received = db.Column(db.Numeric(10,2), nullable=False)
+    payment_method = db.Column(db.String(255))
+    notes = db.Column(db.String(300))
+
+    # Add missing relationship
+    service = db.relationship("Services", back_populates="sales")

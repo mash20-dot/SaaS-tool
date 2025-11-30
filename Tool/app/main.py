@@ -23,6 +23,8 @@ from sms.send import sms
 from blog.write import blog
 from forgotpassword.password import forgotpassword
 from password.uppass import password
+from service.provided import service
+from servicesales.sales import servicesales
 
 
 #Telling python to use pymysql
@@ -82,6 +84,9 @@ app.register_blueprint(sms, url_prefix='/sms')
 app.register_blueprint(blog, url_prefix=('/blog'))
 app.register_blueprint(forgotpassword, url_prefix='/forgotpassword')
 app.register_blueprint(password, url_prefix='/password')
+app.register_blueprint(service, url_prefix='/service')
+app.register_blueprint(servicesales, url_prefix='/servicesales')
+
 
 # Initializing extensions
 db.init_app(app)
