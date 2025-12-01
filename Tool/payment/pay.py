@@ -16,37 +16,43 @@ payment = Blueprint('payment', __name__)
 SMS_BUNDLES = {
     "small": {
         "sms_credits": 500,
-        "sell_price": 23.25,
+        "sell_price": 20.00,
         "cost": 15.50,
-        "profit": 7.75,
+        "profit": 4.50,
+        "profit_margin": "22%",
         "packs_needed": 1,
         "leftover_units": 145  # Tracked but NOT given to user
     },
     "medium": {
         "sms_credits": 1000,
-        "sell_price": 46.50,
+        "sell_price": 40.00,
         "cost": 31.00,
-        "profit": 15.50,
+        "profit": 9.00,
+        "profit_margin": "22%",
         "packs_needed": 2,
         "leftover_units": 290
     },
     "large": {
         "sms_credits": 5000,
-        "sell_price": 232.50,
+        "sell_price": 200.00,
         "cost": 155.00,
-        "profit": 77.50,
+        "profit": 45.00,
+        "profit_margin": "22%",
         "packs_needed": 8,
         "leftover_units": 160
     },
     "xl": {
         "sms_credits": 10000,
-        "sell_price": 465.00,
+        "sell_price": 400.00,
         "cost": 310.00,
-        "profit": 155.00,
+        "profit": 90.00,
+        "profit_margin": "22%",
         "packs_needed": 16,
         "leftover_units": 320
     }
 }
+
+
 
 
 @payment.route('/get-bundles', methods=['GET'])
