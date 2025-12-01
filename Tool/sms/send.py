@@ -8,7 +8,7 @@ import re
 
 sms = Blueprint("sms", "__name__")
 
-cost_per_sms = float("0.20")
+cost_per_sms = float("0.0465")
 
 @sms.route('/api/sms/send', methods=['POST'])
 @jwt_required()
@@ -40,7 +40,7 @@ def send_sms():
         }), 400
 
     # Check balance
-    user_balance = float(current_user.balance or 0)
+    user_balance = float(current_user.sms_balance or 0)
     total_cost = cost_per_sms * len(recipients)
 
     if user_balance < total_cost:
@@ -54,7 +54,7 @@ def send_sms():
     key = os.getenv("ARKESEL_SMS_KEY")
     headers = {"api-key": key, "Content-Type": "application/json"}
 
-    # ✅ CRITICAL: Add your webhook URL here
+    # CRITICAL: Add your webhook URL here
     # This tells Arkesel where to send delivery reports
     webhook_url = os.getenv("WEBHOOK_BASE_URL") + "/sms/api/sms/dlr"
 
@@ -179,14 +179,14 @@ def dlr_webhook():
         if new_status == "delivered":
             user = User.query.get(sms_record.user_id)
             if user:
-                current_balance = float(user.balance or 0)
+                current_balance = float(user.sms_balance or 0)
                 new_balance = round(current_balance - cost_per_sms, 2)  # Fixed floating point
                 
                 # Prevent negative balance (safety check)
                 if new_balance < 0:
                     new_balance = 0
                 
-                user.balance = new_balance
+                user.sms_balance = new_balance
 
         db.session.commit()
 

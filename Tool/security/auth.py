@@ -4,12 +4,20 @@ from app.models import User
 from app.db import db, app_logger 
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
+from datetime import datetime, timedelta
 
 security = Blueprint('security', '__name__')
 
 #validating email format
 EMAIL_REGEX = r'^[\w\.-]+@[\w\.-]+\.\w+$'
 
+#def generate_email_token(user):
+    #token = create_access_token(
+        #identity=user.email,
+        #expires_delta=timedelta(hours=1),
+       # additional_claims={"type": "email_verification"}
+   # )
+    #return token
 
 @security.route('/signup', methods=['POST'])
 def signup():

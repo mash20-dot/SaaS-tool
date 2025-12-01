@@ -9,10 +9,11 @@ class User(db.Model):
     business_name = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(300), unique=True, nullable=False)
     phone = db.Column(db.String(50), unique=True, nullable=False )
-    balance = db.Column(db.Numeric(10,2), nullable=False)
+    sms_balance = db.Column(db.Numeric(10,2), nullable=False)
     location = db.Column(db.String(100), nullable=False)
     currency = db.Column(db.String(3), default='GHS', server_default='GHS')
     password = db.Column(db.String(400), nullable=False)
+    #email_verified = db.Column(db.Boolean, default=False)
     reset_token = db.Column(db.String(255), nullable=True)
     reset_expires = db.Column(db.DateTime, nullable=True)
     products = db.relationship('Product', backref='user', lazy=True)
@@ -66,7 +67,7 @@ class Payment(db.Model):
     status = db.Column(db.String(50), default="pending", nullable=False)
 
     currency = db.Column(db.String(50), default="GHS", nullable=False)
-    
+    bundle_type = db.Column(db.String(20), nullable=True)
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
