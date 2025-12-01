@@ -55,25 +55,9 @@ def send_sms():
     key = os.getenv("ARKESEL_SMS_KEY")
     headers = {"api-key": key, "Content-Type": "application/json"}
 
-    # CRITICAL: Build webhook URL
+    # Build webhook URL
     webhook_base = os.getenv("WEBHOOK_BASE_URL")
-    
-    # DEBUG LOGGING
-    print("=" * 60)
-    print("📤 SENDING SMS")
-    print(f"WEBHOOK_BASE_URL env var: {webhook_base}")
-    
-    if not webhook_base:
-        print("❌ WARNING: WEBHOOK_BASE_URL is not set!")
-        webhook_url = "https://nkwabiz-backend-testing.onrender.com/sms/api/sms/dlr"
-        print(f"Using hardcoded fallback: {webhook_url}")
-    else:
-        webhook_url = webhook_base + "/sms/api/sms/dlr"
-        print(f"Using configured webhook: {webhook_url}")
-    
-    print(f"Recipients: {recipients}")
-    print(f"Message: {message}")
-    print("=" * 60)
+    webhook_url = (webhook_base + "/sms/api/sms/dlr") if webhook_base else "https://nkwabiz-backend-testing.onrender.com/sms/api/sms/dlr"
 
     payload = {
         "sender": sender_name,
@@ -83,16 +67,11 @@ def send_sms():
     }
 
     try:
-        print(f"🌐 Calling Arkesel API...")
         response = requests.post(url, json=payload, headers=headers)
         response_data = response.json()
-        
-        print(f"📨 Arkesel Response Status: {response.status_code}")
-        print(f"📨 Arkesel Response Body: {response_data}")
 
         # Check if request was successful
         if response.status_code != 200:
-            print(f"❌ Arkesel returned error: {response_data}")
             return jsonify({
                 "error": "Failed to send SMS",
                 "details": response_data
@@ -102,7 +81,6 @@ def send_sms():
         arkesel_data = response_data.get("data", [])
         
         if not isinstance(arkesel_data, list):
-            print(f"⚠️ Unexpected data format from Arkesel: {type(arkesel_data)}")
             # Fallback: create records for all recipients
             for recipient in recipients:
                 sms_log = SMSHistory(
@@ -115,14 +93,11 @@ def send_sms():
                 )
                 db.session.add(sms_log)
         else:
-            print(f"✅ Creating SMS history for {len(arkesel_data)} messages")
             # Create SMS history records with Arkesel's message IDs
             for item in arkesel_data:
                 message_id = item.get("message_id") or item.get("id") or item.get("messageId")
                 recipient = item.get("recipient") or item.get("number") or item.get("phone")
                 initial_status = item.get("status", "pending")
-                
-                print(f"   - Recipient: {recipient}, Message ID: {message_id}, Status: {initial_status}")
                 
                 if recipient:
                     sms_log = SMSHistory(
@@ -136,30 +111,23 @@ def send_sms():
                     db.session.add(sms_log)
 
         db.session.commit()
-        print("✅ SMS history saved to database")
 
         successful_count = len(arkesel_data) if isinstance(arkesel_data, list) else len(recipients)
 
         return jsonify({
             "message": f"SMS queued for {successful_count} recipient(s). Balance will be deducted upon delivery.",
             "total_sent": successful_count,
-            "current_sms_balance": user_sms_balance,
-            "webhook_url": webhook_url,
-            "arkesel_response": response_data  # Include full response for debugging
+            "current_sms_balance": user_sms_balance
         }), 200
 
     except requests.exceptions.RequestException as e:
         db.session.rollback()
-        print(f"❌ Request Exception: {str(e)}")
         return jsonify({
             "error": "Failed to communicate with SMS provider",
             "details": str(e)
         }), 500
     except Exception as e:
         db.session.rollback()
-        print(f"❌ Exception: {str(e)}")
-        import traceback
-        traceback.print_exc()
         return jsonify({
             "error": "Internal server error",
             "details": str(e)
