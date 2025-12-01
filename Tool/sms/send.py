@@ -8,7 +8,8 @@ import re
 
 sms = Blueprint("sms", "__name__")
 
-cost_per_sms = float("0.0465")
+cost_per_sms = float("1")
+cost_per_sms_money = float("0.0465")
 
 @sms.route('/api/sms/send', methods=['POST'])
 @jwt_required()
@@ -116,7 +117,7 @@ def send_sms():
         return jsonify({
             "message": f"SMS queued for {successful_count} recipient(s). Delivery updates will arrive soon.",
             "total_sent": successful_count,
-            "total_cost": successful_count * cost_per_sms,
+            "total_cost": successful_count * cost_per_sms_money,
             "webhook_url": webhook_url  
         }), 200
 
@@ -237,7 +238,7 @@ def all_sms():
         })
 
     return jsonify({
-        "balance": float(current_user.balance or 0), 
+        "balance": float(current_user.sms_balance or 0), 
         "total_sms": total_sms,
         "total_delivered": total_delivered,
         "total_failed": total_failed,
