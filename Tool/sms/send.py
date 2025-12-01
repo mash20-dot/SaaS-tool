@@ -132,6 +132,9 @@ def send_sms():
             "error": "Internal server error",
             "details": str(e)
         }), 500
+
+
+
 @sms.route("/api/sms/dlr", methods=["GET", "POST"])
 def dlr_webhook():
     """
