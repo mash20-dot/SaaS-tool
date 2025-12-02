@@ -129,11 +129,12 @@ def send_sms():
         successful_count = len(arkesel_data) if isinstance(arkesel_data, list) else len(recipients)
 
         return jsonify({
-            "message": f"SMS queued for {successful_count} recipient(s). Balance will be deducted upon delivery.",
-            "total_sent": successful_count,
-            "current_sms_balance": user_sms_balance
+        "message": f"SMS queued for {successful_count} recipient(s)!",
+        "info": "Your message may be delivered to recipients before the delivery status updates in our system (usually within 24 hours). Balance deducted after delivery confirmation.",
+        "total_sent": successful_count,
+        "current_sms_balance": user_sms_balance
         }), 200
-
+    
     except requests.exceptions.RequestException as e:
         db.session.rollback()
         logger.error(f"SMS API request error: {str(e)}")
