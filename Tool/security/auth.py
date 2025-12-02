@@ -172,6 +172,8 @@ def signup():
             # verification_token_expiry=token_expiry
         )
 
+        
+        
         db.session.add(save_user)
         db.session.commit()
         
