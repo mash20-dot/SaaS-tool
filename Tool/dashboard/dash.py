@@ -32,7 +32,7 @@ def board():
             "expiration_date":me.expiration_date,
             "remaining_stock":me.remaining_stock,
             "supplier_info":me.supplier_info,
-            "balance": float(current_user.balance) if current_user.balance is not None else 0.0
+            "balance": float(current_user.sms_balance) if current_user.sms_balance is not None else 0.0
         })
 
     return jsonify(all_info), 200
