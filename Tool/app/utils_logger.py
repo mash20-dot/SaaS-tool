@@ -52,6 +52,24 @@ class AppLogger:
     def product_status_attempt(self, current_user, ip_address):
         self.logger.info(f"{current_user} tried searching for s product, ip:{ip_address}")
 
+    
+    
+    
+    
+    
+    
+    #for stock file
+    def sales_entering_attempt(self, current_user, ip_address):
+        self.logger.info(f"{current_user} tried to enter sales, ip:{ip_address}")
+    def low_stock_alert_attempt(self, current_user, ip_address):
+        self.logger.info(f"{current_user}, low stock alert triggered, ip:{ip_address}")
+    def sales_analytics_attempt(self, current_user, ip_address):
+        self.logger.info(f"{current_user} attempt to retrieve sales analytics, ip:{ip_address}")
+    def all_sales_attempt(self, current_user, ip_address):
+        self.logger.info(f"{current_user} attempt to get all sales, ip:{ip_address}")
+    def sales_filter_attempt(self, current_user, ip_address):
+        self.logger.info(f"{current_user} attempted to filter sales, ip:{ip_address}")
+
 
 
     #for login and signup
@@ -79,8 +97,20 @@ class AppLogger:
     def product_status_success(self, current_user):
         self.logger.info(f"{current_user} searched for a product based on status")
 
-
-
+    
+    #for stock file
+    def sales_entering_success(self, current_user):
+        self.logger.info(f"{current_user} recorded sales")
+    def low_stock_alert_success(self, current_user):
+        self.logger.info(f"{current_user} low stock alert triggered successfully")
+    def sales_analytics_success(self, current_user):
+        self.logger.info(f"{current_user} viewed sales analytics successfully")
+    def all_sales_success(self, current_user):
+        self.logger.info(f"{current_user} viewed all sales made")
+    def sales_filter_success(self, current_user):
+        self.logger.info(f"{current_user} filtered sales successfully")
+    
+    
     #for login and signup
     def log_auth_failure(self, email, reason="Invalid credentials"):
         self.logger.warning(f"Login FAILED - {email} - Reason: {reason}")
@@ -105,8 +135,20 @@ class AppLogger:
     def product_status_failure(self, current_user, reason="failed"):
         self.logger.info(f"{current_user}, Reasons={reason}")
 
-
-
+    
+    #for stock file
+    def sales_entering_failure(self, current_user, reason="failed"):
+        self.logger.info(f"{current_user}, sales record failed, Reasons={reason}")
+    def low_stock_alert_failure(self, current_user, reason="failed"):
+        self.logger.info(f"{current_user}, low stock alert failed, Reason={reason}")
+    def sales_analytics_failure(self, current_user, reason="failed"):
+        self.logger.info(f"{current_user} sales analytics failed to download, Reason={reason}")
+    def all_sales_failure(self, current_user, reason="failure"):
+        self.logger.info(f"{current_user}, retrieving all sales failed, Reason={reason}")
+    def sales_filter_failure(self, current_user, reason="failed"):
+        self.logger.info(f"{current_user}, failed to filter sales, Reason={reason} ")
+    
+    
     def log_user_action(self, action, details=None):
         current_user = _safe_get_user() or "Anonymous"
         details_str = f" - {details}" if details else ""

@@ -9,10 +9,13 @@ class User(db.Model):
     business_name = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(300), unique=True, nullable=False)
     phone = db.Column(db.String(50), unique=True, nullable=False )
-    balance = db.Column(db.Numeric(10,2), nullable=False)
+    sms_balance = db.Column(db.Numeric(10,2), nullable=False)
     location = db.Column(db.String(100), nullable=False)
     currency = db.Column(db.String(3), default='GHS', server_default='GHS')
     password = db.Column(db.String(400), nullable=False)
+    verification_token = db.Column(db.String(100), unique=True, nullable=True)
+    verification_token_expiry = db.Column(db.DateTime, nullable=True)
+    is_verified = db.Column(db.Boolean, default=False)
     reset_token = db.Column(db.String(255), nullable=True)
     reset_expires = db.Column(db.DateTime, nullable=True)
     products = db.relationship('Product', backref='user', lazy=True)
@@ -66,12 +69,27 @@ class Payment(db.Model):
     status = db.Column(db.String(50), default="pending", nullable=False)
 
     currency = db.Column(db.String(50), default="GHS", nullable=False)
-    
+    bundle_type = db.Column(db.String(20), nullable=True)
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class SMSHistory(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    recipient = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(100), default='pending') 
+    message_id = db.Column(db.String(255), unique=True, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
 
+class SMScontacts(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    contact = db.Column(db.String(255), nullable=False)
+    category = db.Column(db.String(255))
 
 class Spent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -83,13 +101,6 @@ class Spent(db.Model):
 
 
 
-class SMSHistory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
-    recipient = db.Column(db.String(255), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    status = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Store(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -127,5 +138,38 @@ class Blog(db.Model):
     
 
    
+class Services(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    service_name = db.Column(db.String(300))
+    description = db.Column(db.String(400))
+    pricing_type = db.Column(db.String(300))  # fixed, hourly or custom
+    price = db.Column(db.Numeric(10,2))
+
+    # Relationship to sales
+    sales = db.relationship(
+        "Servicesales",
+        back_populates="service",
+        cascade="all, delete-orphan"
+    )
 
 
+class Servicesales(db.Model):
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    services_id = db.Column(
+        db.Integer,
+        db.ForeignKey("services.id"),
+        nullable=False
+    )
+
+    client_name = db.Column(db.String(255))
+    date_time = db.Column(db.String(255))
+    income_received = db.Column(db.Numeric(10,2), nullable=False)
+    payment_method = db.Column(db.String(255))
+    notes = db.Column(db.String(300))
+
+    # Add missing relationship
+    service = db.relationship("Services", back_populates="sales")
