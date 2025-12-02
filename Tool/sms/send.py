@@ -11,6 +11,13 @@ sms = Blueprint("sms", "__name__")
 cost_per_sms = float("1")
 cost_per_sms_money = float("0.0465")
 
+import logging
+
+# Set up logging at the top of your file
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
 @sms.route('/api/sms/send', methods=['POST'])
 @jwt_required()
 def send_sms():
@@ -58,6 +65,8 @@ def send_sms():
     # Build webhook URL
     webhook_base = os.getenv("WEBHOOK_BASE_URL")
     webhook_url = (webhook_base + "/sms/api/sms/dlr") if webhook_base else "https://nkwabiz-backend-testing.onrender.com/sms/api/sms/dlr"
+    
+    logger.info(f"Sending SMS with webhook URL: {webhook_url}")
 
     payload = {
         "sender": sender_name,
@@ -69,6 +78,9 @@ def send_sms():
     try:
         response = requests.post(url, json=payload, headers=headers)
         response_data = response.json()
+        
+        logger.info(f"Arkesel API response status: {response.status_code}")
+        logger.info(f"Arkesel API response: {response_data}")
 
         # Check if request was successful
         if response.status_code != 200:
@@ -99,6 +111,8 @@ def send_sms():
                 recipient = item.get("recipient") or item.get("number") or item.get("phone")
                 initial_status = item.get("status", "pending")
                 
+                logger.info(f"Saving SMS record - Message ID: {message_id}, Recipient: {recipient}, Status: {initial_status}")
+                
                 if recipient:
                     sms_log = SMSHistory(
                         user_id=current_user.id,
@@ -122,75 +136,101 @@ def send_sms():
 
     except requests.exceptions.RequestException as e:
         db.session.rollback()
+        logger.error(f"SMS API request error: {str(e)}")
         return jsonify({
             "error": "Failed to communicate with SMS provider",
             "details": str(e)
         }), 500
     except Exception as e:
         db.session.rollback()
+        logger.error(f"SMS send error: {str(e)}", exc_info=True)
         return jsonify({
             "error": "Internal server error",
             "details": str(e)
         }), 500
 
 
-
-@sms.route("/api/sms/dlr", methods=["GET", "POST"])
+@sms.route("/api/sms/dlr", methods=["GET", "POST", "OPTIONS"])
 def dlr_webhook():
     """
     Delivery Receipt webhook from Arkesel
     Arkesel sends: GET /api/sms/dlr?sms_id=xxx&status=DELIVERED
     """
+    # Log EVERYTHING that comes in
+    logger.info("=" * 60)
+    logger.info("🔔 WEBHOOK ENDPOINT HIT!")
+    logger.info(f"Method: {request.method}")
+    logger.info(f"Full URL: {request.url}")
+    logger.info(f"Headers: {dict(request.headers)}")
+    logger.info(f"Query Params: {request.args.to_dict()}")
+    logger.info(f"Body (raw): {request.get_data(as_text=True)}")
+    logger.info("=" * 60)
+    
+    # Handle OPTIONS for CORS
+    if request.method == "OPTIONS":
+        return jsonify({"message": "OK"}), 200
+    
     try:
         # Get data from query params (GET) or JSON body (POST)
         if request.method == "GET":
             message_id = request.args.get("sms_id") or request.args.get("message_id") or request.args.get("id")
             status = request.args.get("status")
+            logger.info(f"📨 GET request - message_id: {message_id}, status: {status}")
         else:
             # POST request - read from JSON body
-            data = request.get_json(silent=True)
-            if not data:
-                return jsonify({"error": "No data received"}), 400
+            data = request.get_json(silent=True) or {}
+            logger.info(f"📨 POST JSON data: {data}")
             message_id = data.get("sms_id") or data.get("message_id") or data.get("id")
             status = data.get("status")
 
         if not message_id or not status:
+            logger.error(f"❌ Missing required fields - message_id: {message_id}, status: {status}")
             return jsonify({
                 "error": "Missing required fields: message_id/sms_id and status"
             }), 400
 
+        logger.info(f"🔍 Looking up message_id: {message_id}")
+        
         # Find the SMS record
         sms_record = SMSHistory.query.filter_by(message_id=str(message_id)).first()
 
         if not sms_record:
+            logger.warning(f"⚠️ Message ID {message_id} not found in database")
+            # Still return 200 so Arkesel doesn't retry
             return jsonify({
                 "message": "Message ID not found in records"
-            }), 404
+            }), 200
 
         # Prevent duplicate processing
         if sms_record.status in ["delivered", "failed"]:
+            logger.info(f"ℹ️ Message {message_id} already processed with status: {sms_record.status}")
             return jsonify({
                 "message": "Status already processed"
             }), 200
 
         # Update status
         new_status = status.lower()
+        old_status = sms_record.status
         sms_record.status = new_status
+        
+        logger.info(f"🔄 Updating message {message_id} from '{old_status}' to '{new_status}'")
 
         # Deduct balance ONLY if delivered successfully
         if new_status == "delivered":
             user = User.query.get(sms_record.user_id)
             if user:
                 current_balance = float(user.sms_balance or 0)
-                new_balance = round(current_balance - cost_per_sms, 2)  # Fixed floating point
+                new_balance = round(current_balance - cost_per_sms, 2)
                 
                 # Prevent negative balance (safety check)
                 if new_balance < 0:
                     new_balance = 0
                 
+                logger.info(f"💰 Deducting SMS balance for user {user.id}: {current_balance} -> {new_balance}")
                 user.sms_balance = new_balance
 
         db.session.commit()
+        logger.info(f"✅ Successfully processed DLR for message {message_id}")
 
         return jsonify({
             "message": "DLR processed successfully",
@@ -200,10 +240,13 @@ def dlr_webhook():
 
     except Exception as e:
         db.session.rollback()
+        logger.error(f"💥 Webhook processing error: {str(e)}", exc_info=True)
+        # Return 200 anyway so Arkesel doesn't keep retrying
         return jsonify({
-            "error": "Webhook processing failed",
-            "details": str(e)
-        }), 500
+            "message": "Error logged, will not retry"
+        }), 200
+
+
 
 @sms.route('/all/sms', methods=['GET'])
 @jwt_required()
