@@ -156,46 +156,27 @@ def dlr_webhook():
     Delivery Receipt webhook from Arkesel
     Arkesel sends: GET /api/sms/dlr?sms_id=xxx&status=DELIVERED
     """
-    # Log EVERYTHING that comes in
-    logger.info("=" * 60)
-    logger.info("🔔 WEBHOOK ENDPOINT HIT!")
-    logger.info(f"Method: {request.method}")
-    logger.info(f"Full URL: {request.url}")
-    logger.info(f"Headers: {dict(request.headers)}")
-    logger.info(f"Query Params: {request.args.to_dict()}")
-    logger.info(f"Body (raw): {request.get_data(as_text=True)}")
-    logger.info("=" * 60)
-    
     # Handle OPTIONS for CORS
     if request.method == "OPTIONS":
         return jsonify({"message": "OK"}), 200
     
     try:
-        # Get data from query params (GET) or JSON body (POST)
         if request.method == "GET":
             message_id = request.args.get("sms_id") or request.args.get("message_id") or request.args.get("id")
             status = request.args.get("status")
-            logger.info(f"📨 GET request - message_id: {message_id}, status: {status}")
         else:
-            # POST request - read from JSON body
             data = request.get_json(silent=True) or {}
-            logger.info(f"📨 POST JSON data: {data}")
             message_id = data.get("sms_id") or data.get("message_id") or data.get("id")
             status = data.get("status")
 
         if not message_id or not status:
-            logger.error(f"❌ Missing required fields - message_id: {message_id}, status: {status}")
             return jsonify({
                 "error": "Missing required fields: message_id/sms_id and status"
             }), 400
-
-        logger.info(f"🔍 Looking up message_id: {message_id}")
         
-        # Find the SMS record
         sms_record = SMSHistory.query.filter_by(message_id=str(message_id)).first()
 
         if not sms_record:
-            logger.warning(f"⚠️ Message ID {message_id} not found in database")
             # Still return 200 so Arkesel doesn't retry
             return jsonify({
                 "message": "Message ID not found in records"
@@ -203,17 +184,12 @@ def dlr_webhook():
 
         # Prevent duplicate processing
         if sms_record.status in ["delivered", "failed"]:
-            logger.info(f"ℹ️ Message {message_id} already processed with status: {sms_record.status}")
             return jsonify({
                 "message": "Status already processed"
             }), 200
 
-        # Update status
         new_status = status.lower()
-        old_status = sms_record.status
         sms_record.status = new_status
-        
-        logger.info(f"🔄 Updating message {message_id} from '{old_status}' to '{new_status}'")
 
         # Deduct balance ONLY if delivered successfully
         if new_status == "delivered":
@@ -226,11 +202,9 @@ def dlr_webhook():
                 if new_balance < 0:
                     new_balance = 0
                 
-                logger.info(f"💰 Deducting SMS balance for user {user.id}: {current_balance} -> {new_balance}")
                 user.sms_balance = new_balance
 
         db.session.commit()
-        logger.info(f"✅ Successfully processed DLR for message {message_id}")
 
         return jsonify({
             "message": "DLR processed successfully",
@@ -240,13 +214,11 @@ def dlr_webhook():
 
     except Exception as e:
         db.session.rollback()
-        logger.error(f"💥 Webhook processing error: {str(e)}", exc_info=True)
+        logger.error(f"Webhook processing error: {str(e)}", exc_info=True)
         # Return 200 anyway so Arkesel doesn't keep retrying
         return jsonify({
             "message": "Error logged, will not retry"
         }), 200
-
-
 
 @sms.route('/all/sms', methods=['GET'])
 @jwt_required()
