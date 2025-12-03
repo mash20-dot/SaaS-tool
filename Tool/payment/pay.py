@@ -225,7 +225,7 @@ def paystack_webhook():
             return jsonify({"status": "error", "message": "Missing signature"}), 400
 
 
-        app_logger.payment_webhook_attempt()
+        app_logger.payment_webhook_attempt("paystack tried calling webhook")
 
         secret = os.getenv("PAYSTACK_SECRET_KEY", "").encode()
         computed_signature = hmac.new(secret, body, hashlib.sha512).hexdigest()
@@ -247,7 +247,7 @@ def paystack_webhook():
 
             payment_record = Payment.query.filter_by(reference=reference).first()
             if not payment_record:
-                app_logger.payment_webhook_failure()
+                app_logger.payment_webhook_failure("webhook calling failed")
                 return jsonify({"status": "error", "message": "Payment not found"}), 404
 
             # Prevent duplicate processing
@@ -283,7 +283,8 @@ def paystack_webhook():
 
             db.session.commit()
 
-            app_logger.payment_webhook_success()
+            
+            app_logger.payment_webhook_success("webhook called successfully")
 
 
             return jsonify({
