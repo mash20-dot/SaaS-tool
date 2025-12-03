@@ -87,7 +87,8 @@ class AppLogger:
         self.logger.info(f"{current_user} tried verifying payment, ip:{ip_address}")
     def payment_webhook_attempt(self, message):
         self.logger.info("paystack tried calling webhook")
-
+    def payment_plans_attempt(self, message):
+        self.logger.info("sms plans retrieved successfully")
 
     #for login and signup
     def log_auth_success(self, email, business_name=None):
@@ -148,7 +149,7 @@ class AppLogger:
         self.logger.info(f"{current_user} payment verification successful")
     def payment_webhook_success(self, message):
         self.logger.info("paystack called webhook successfully")
-    def payment_plans_success(self):
+    def payment_plans_success(self, message):
         self.logger.info("sms plans viewed successfully")
 
     #for login and signup
