@@ -59,7 +59,7 @@ SMS_BUNDLES = {
 @payment.route('/get-bundles', methods=['GET'])
 def get_bundles():
     """Return available SMS bundles for frontend display"""
-    app_logger.payment_plans_attempt()
+    app_logger.payment_plans_attempt("sms plans attempted retrival")
     bundles = []
     for bundle_id, details in SMS_BUNDLES.items():
         bundles.append({
@@ -70,7 +70,7 @@ def get_bundles():
             "price_per_sms": round(details["sell_price"] / details["sms_credits"], 4)
         })
     
-    app_logger.payment_plans_success()
+    app_logger.payment_plans_success("sms plans retrieved successfully")
     return jsonify({"bundles": bundles}), 200
 
 
