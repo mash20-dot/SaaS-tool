@@ -7,6 +7,7 @@ import requests
 import hmac, hashlib
 import os
 from decimal import Decimal
+from app.db import app_logger
 
 
 payment = Blueprint('payment', __name__)
@@ -58,6 +59,7 @@ SMS_BUNDLES = {
 @payment.route('/get-bundles', methods=['GET'])
 def get_bundles():
     """Return available SMS bundles for frontend display"""
+    app_logger.payment_plans_attempt()
     bundles = []
     for bundle_id, details in SMS_BUNDLES.items():
         bundles.append({
@@ -67,6 +69,8 @@ def get_bundles():
             "price": details["sell_price"],
             "price_per_sms": round(details["sell_price"] / details["sms_credits"], 4)
         })
+    
+    app_logger.payment_plans_success()
     return jsonify({"bundles": bundles}), 200
 
 
@@ -79,10 +83,14 @@ def initialize_payment():
     if not current_user:
         return jsonify({"message": "User not found"}), 400
 
+    app_logger.payment_paying_attempt(current_user, request.remote_addr)
+
+
     data = request.get_json()
     bundle_type = data.get("bundle_type")  # Changed from amount to bundle_type
     
     if not bundle_type or bundle_type not in SMS_BUNDLES:
+        app_logger.payment_paying_failure(current_user, reason="missing plan choice")
         return jsonify({
             "message": "Invalid bundle type. Choose: small, medium, large, or xl"
         }), 400
@@ -135,6 +143,8 @@ def initialize_payment():
         new_payment.gateway_response = str(paystack_response)
         db.session.commit()
         
+        app_logger.payment_paying_success(current_user)
+
         return jsonify({
             "status": "success",
             "bundle": {
@@ -158,6 +168,10 @@ def verify_payment(reference):
     if not current_user:
         return jsonify({"message": "User not found"}), 404
 
+    app_logger.payment_verification_attempt(current_user, request.remote_addr)
+
+
+
     payment_record = Payment.query.filter_by(reference=reference).first()
     if not payment_record:
         return jsonify({"message": "Payment not found"}), 404
@@ -179,6 +193,8 @@ def verify_payment(reference):
     paystack_status = paystack_data.get("status")
     amount_paid = float(paystack_data.get("amount", 0)) / 100
     
+    app_logger.payment_verification_success(current_user)
+
     if paystack_status == "success":
         return jsonify({
             "message": "Payment verified successfully!",
@@ -188,6 +204,7 @@ def verify_payment(reference):
             "current_sms_balance": int(current_user.sms_balance or 0)
         }), 200
     else:
+        app_logger.payment_verification_failure(current_user, reason="failed")
         return jsonify({
             "message": "Payment verification failed",
             "status": paystack_status
@@ -206,6 +223,9 @@ def paystack_webhook():
 
         if not paystack_signature:
             return jsonify({"status": "error", "message": "Missing signature"}), 400
+
+
+        app_logger.payment_webhook_attempt()
 
         secret = os.getenv("PAYSTACK_SECRET_KEY", "").encode()
         computed_signature = hmac.new(secret, body, hashlib.sha512).hexdigest()
@@ -227,6 +247,7 @@ def paystack_webhook():
 
             payment_record = Payment.query.filter_by(reference=reference).first()
             if not payment_record:
+                app_logger.payment_webhook_failure()
                 return jsonify({"status": "error", "message": "Payment not found"}), 404
 
             # Prevent duplicate processing
@@ -261,6 +282,9 @@ def paystack_webhook():
                 # You can add these fields to track business metrics
 
             db.session.commit()
+
+            app_logger.payment_webhook_success()
+
 
             return jsonify({
                 "status": "success",
