@@ -281,9 +281,12 @@ def paystack_webhook():
                 # (This is for your accounting, not given to user)
                 # You can add these fields to track business metrics
 
+           
             db.session.commit()
 
             
+           
+           
             app_logger.payment_webhook_success("webhook called successfully")
 
 
