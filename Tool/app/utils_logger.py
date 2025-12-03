@@ -70,7 +70,7 @@ class AppLogger:
     #for sending sms
     def sms_sending_attempt(self, current_user, ip_address):
         self.logger.info(f"{current_user} tried to send sms, ip:{ip_address}")
-    def sms_webhook_attempt(self):
+    def sms_webhook_attempt(self, message):
         self.logger.info("arkesel tried to call webhook")
     def sms_all_attempt(self, current_user, ip_address):
         self.logger.info(f"{current_user} tried getting sms history, ip:{ip_address}")
@@ -85,7 +85,7 @@ class AppLogger:
         self.logger.info(f"{current_user} tried initializing payment, ip:{ip_address}")
     def payment_verification_attempt(self, current_user, ip_address):
         self.logger.info(f"{current_user} tried verifying payment, ip:{ip_address}")
-    def payment_webhook_attempt(self):
+    def payment_webhook_attempt(self, message):
         self.logger.info("paystack tried calling webhook")
 
 
@@ -131,7 +131,7 @@ class AppLogger:
     #for sending sms
     def sms_sending_success(self, current_user):
         self.logger.info(f"{current_user} sent an sms")
-    def sms_webhook_success(self):
+    def sms_webhook_success(self, message):
         self.logger.info("Arkesel called webhook successful")
     def sms_all_success(self, current_user):
         self.logger.info(f"{current_user} retrieved all sms history successfully")
@@ -146,9 +146,10 @@ class AppLogger:
         self.logger.info(f"{current_user} initialized payment successfully")
     def payment_verification_success(self, current_user):
         self.logger.info(f"{current_user} payment verification successful")
-    def payment_webhook_success(self):
+    def payment_webhook_success(self, message):
         self.logger.info("paystack called webhook successfully")
-
+    def payment_plans_success(self):
+        self.logger.info("sms plans viewed successfully")
 
     #for login and signup
     def log_auth_failure(self, email, reason="Invalid credentials"):
@@ -191,7 +192,7 @@ class AppLogger:
     #for sending sms
     def sms_sending_failure(self, current_user, reason="failed"):
         self.logger.info(f"{current_user} sms sending failed, Reasons={reason}")
-    def sms_webhook_failure(self):
+    def sms_webhook_failure(self, message):
         self.logger.info("Arkesel call to your webhook failed")
     def sms_all_failure(self, current_user, reason="failed"):
         self.logger.info(f"{current_user} tried retrieving sms but it failed")
@@ -206,9 +207,10 @@ class AppLogger:
         self.logger.info(f"{current_user} payment initialization failed, Reason={reason}")
     def payment_verification_failure(self, current_user, reason="failed"):
         self.logger.info(f"{current_user} verification payment failed Reason={reason}")
-    def payment_webhook_failure(self):
+    def payment_webhook_failure(self, message):
         self.logger.info("paystack calling webhook failed")
-
+    def payment_plans_failure(self):
+        self.logger.info("Someone tried viewing payment price")
 
     def log_user_action(self, action, details=None):
         current_user = _safe_get_user() or "Anonymous"
