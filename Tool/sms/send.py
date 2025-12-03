@@ -5,6 +5,7 @@ from app.models import User, db, SMSHistory, SMScontacts
 import os
 from datetime import datetime
 import re
+from app.db import app_logger
 
 sms = Blueprint("sms", "__name__")
 
@@ -26,6 +27,9 @@ def send_sms():
 
     if not current_user:
         return jsonify({"message": "user not found"}), 400
+
+    app_logger.sms_sending_attempt(current_user, request.remote_addr)
+
 
     data = request.get_json()
     recipients = data.get("recipients") or data.get("recipient")
@@ -84,6 +88,7 @@ def send_sms():
 
         # Check if request was successful
         if response.status_code != 200:
+            app_logger.sms_sending_failure(current_user, Reason="failed")
             return jsonify({
                 "error": "Failed to send SMS",
                 "details": response_data
@@ -128,6 +133,8 @@ def send_sms():
 
         successful_count = len(arkesel_data) if isinstance(arkesel_data, list) else len(recipients)
 
+        app_logger.sms_sending_success(current_user)
+
         return jsonify({
         "message": f"SMS queued for {successful_count} recipient(s)!",
         "info": "Your message may be delivered to recipients before the delivery status updates in our system (usually within 24 hours). Balance deducted after delivery confirmation.",
@@ -161,6 +168,9 @@ def dlr_webhook():
     if request.method == "OPTIONS":
         return jsonify({"message": "OK"}), 200
     
+
+    app_logger.sms_webhook_attempt("arkesel tried to call webhook")
+
     try:
         if request.method == "GET":
             message_id = request.args.get("sms_id") or request.args.get("message_id") or request.args.get("id")
@@ -171,6 +181,7 @@ def dlr_webhook():
             status = data.get("status")
 
         if not message_id or not status:
+            app_logger.sms_webhook_failure("Arkesel call to webhook failed")
             return jsonify({
                 "error": "Missing required fields: message_id/sms_id and status"
             }), 400
@@ -207,6 +218,8 @@ def dlr_webhook():
 
         db.session.commit()
 
+        app_logger.sms_webhook_success("Arkesel called webhook successful")
+
         return jsonify({
             "message": "DLR processed successfully",
             "status": new_status,
@@ -224,13 +237,14 @@ def dlr_webhook():
 @sms.route('/all/sms', methods=['GET'])
 @jwt_required()
 def all_sms():
-    """Get all SMS history for the current user"""
     current_email = get_jwt_identity()
     current_user = User.query.filter_by(email=current_email).first()
 
     if not current_user:
         return jsonify({"message": "user not found"}), 400
     
+    app_logger.sms_all_attempt(current_user, request.remote_addr)
+
     # Get all SMS records for this user
     get_all_sms_details = SMSHistory.query.filter_by(
         user_id=current_user.id
@@ -253,6 +267,8 @@ def all_sms():
             "message_id": row.message_id,
             "created_at": row.created_at.strftime("%Y-%m-%d %H:%M:%S") if row.created_at else None
         })
+
+    app_logger.sms_all_success(current_user)
 
     return jsonify({
         "balance": float(current_user.sms_balance or 0), 
@@ -278,12 +294,15 @@ def contacts():
             "message":"user not found"
         }), 400
     
+    app_logger.sms_contact_attempt(current_user, request.remote_addr)
+
     data = request.get_json()
 
     contact = data.get("contact")
     category = data.get("category")
 
     if not contact:
+        app_logger.sms_contact_failure(current_user, reason="failed")
         return jsonify({
             "message": "contact is required"
         }), 400
@@ -295,6 +314,9 @@ def contacts():
     )
     db.session.add(save)
     db.session.commit()
+
+    app_logger.sms_contact_success(current_user)
+
     return jsonify({
         "message": "contacts saved successfully"
     }), 200
@@ -311,12 +333,16 @@ def all_contact():
             "message": "user not found"
         }), 400
     
+    app_logger.sms_all_contact_attempt(current_user, request.remote_addr)
+
+
     # Get all distinct recipients for this user
     all_contacts = SMScontacts.query.filter_by(
         user_id=current_user.id
     ).all()
 
     if not all_contacts:
+        app_logger.sms_all__contact_failure(current_user, reason="no contact")
         return jsonify({
             "message": "you do not have any contacts yet",
             "contacts": []
@@ -330,4 +356,6 @@ def all_contact():
             "category":me.category
         })
     
+    app_logger.sms_all_contact_success(current_user)
+
     return jsonify(cont), 200
