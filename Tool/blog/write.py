@@ -108,7 +108,7 @@ def get_all_posts():
 # GET PUBLISHED POSTS (PUBLIC)
 # ------------------------------
 @blog.route('/posts', methods=['GET', 'OPTIONS'])
-def get_published_posts(current_user):
+def get_published_posts():
     if request.method == "OPTIONS":
         return jsonify({"message": "Preflight OK"}), 200
     
