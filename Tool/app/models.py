@@ -9,7 +9,7 @@ class User(db.Model):
     business_name = db.Column(db.String(100), unique=True, nullable=False)
     email = db.Column(db.String(300), unique=True, nullable=False)
     phone = db.Column(db.String(50), unique=True, nullable=False )
-    sms_balance = db.Column(db.Numeric(10,2), nullable=False)
+    sms_balance = db.Column(db.Numeric(10,2), nullable=False, server_default="5.00")
     location = db.Column(db.String(100), nullable=False)
     currency = db.Column(db.String(3), default='GHS', server_default='GHS')
     password = db.Column(db.String(400), nullable=False)
@@ -173,3 +173,15 @@ class Servicesales(db.Model):
 
     # Add missing relationship
     service = db.relationship("Services", back_populates="sales")
+
+
+class UserLogs(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    activity = db.Column(db.String(255), nullable=False)
+    ip_address = db.Column(db.String(50))
+    user_agent = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship (optional, helpful)
+    user = db.relationship("User", backref=db.backref("logs", lazy=True, cascade="all, delete-orphan"))
