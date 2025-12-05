@@ -16,6 +16,7 @@ security = Blueprint('security', '__name__')
 # Validating email format
 EMAIL_REGEX = r'^[\w\.-]+@[\w\.-]+\.\w+$'
 
+
 resend.api_key = os.environ.get('RESEND_API_KEY')
 
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://nkwabiz-frontend-1.onrender.com')
