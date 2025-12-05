@@ -25,6 +25,8 @@ from forgotpassword.password import forgotpassword
 from password.uppass import password
 from service.provided import service
 from servicesales.sales import servicesales
+from developersmsapi.bulksms import developersmsapi
+
 
 
 #Telling python to use pymysql
@@ -86,6 +88,7 @@ app.register_blueprint(forgotpassword, url_prefix='/forgotpassword')
 app.register_blueprint(password, url_prefix='/password')
 app.register_blueprint(service, url_prefix='/service')
 app.register_blueprint(servicesales, url_prefix='/servicesales')
+app.register_blueprint(developersmsapi, url_prefix='/developersmsapi')
 
 
 # Initializing extensions
