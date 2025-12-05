@@ -8,15 +8,17 @@ import secrets
 import resend
 from datetime import datetime, timedelta
 import os
+import threading
+import time
 
 security = Blueprint('security', '__name__')
 
 # Validating email format
 EMAIL_REGEX = r'^[\w\.-]+@[\w\.-]+\.\w+$'
 
-# resend.api_key = os.environ.get('RESEND_API_KEY')
+resend.api_key = os.environ.get('RESEND_API_KEY')
 
-# FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://nkwabiz-frontend-1.onrender.com')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://nkwabiz-frontend-1.onrender.com')
 
 # def generate_verification_token():
 #     return secrets.token_urlsafe(32)
@@ -53,6 +55,78 @@ EMAIL_REGEX = r'^[\w\.-]+@[\w\.-]+\.\w+$'
 #         print(f"Error sending verification email: {e}")
 #         app_logger.log_error("Failed to send verification email", exception=e)
 #         return False
+
+def send_welcome_email(user_email, user_name, business_name):
+    """Send welcome email to new user after successful signup"""
+    try:
+        params = {
+            "from": "info@nkwabiz.com",
+            "to": [user_email],
+            "subject": f"Welcome to Nkwabiz, {user_name}!",
+            "html": f"""
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h1 style="color: #007bff; margin-bottom: 10px;">🎉 Welcome to Nkwabiz!</h1>
+                    </div>
+                    
+                    <p style="font-size: 16px;">Hi {user_name},</p>
+                    
+                    <p style="font-size: 16px; line-height: 1.6;">
+                        Thank you for signing up with <strong>{business_name}</strong>! We're excited to have you on board.
+                    </p>
+                    
+                    <p style="font-size: 16px; line-height: 1.6;">
+                        You can now log in to your account and start managing your business operations with ease.
+                    </p>
+                    
+                    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                        <h3 style="margin-top: 0; color: #333;">Getting Started:</h3>
+                        <ul style="line-height: 1.8; color: #555;">
+                            <li>Set up your business profile</li>
+                            <li>Add your products or services</li>
+                            <li>Start managing your inventory</li>
+                            <li>Track your sales and expenses</li>
+                        </ul>
+                    </div>
+                    
+                    <a href="{FRONTEND_URL}/login" 
+                       style="display: inline-block; padding: 14px 28px; background-color: #007bff; 
+                              color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;
+                              font-weight: bold;">
+                        Log In to Your Account
+                    </a>
+                    
+                    <p style="font-size: 14px; color: #666; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+                        If you have any questions or need assistance, feel free to reach out to us at 
+                        <a href="mailto:info@nkwabiz.com" style="color: #007bff;">info@nkwabiz.com</a>
+                    </p>
+                    
+                    <p style="font-size: 14px; color: #666;">
+                        Best regards,<br>
+                        <strong>The Nkwabiz Team</strong>
+                    </p>
+                </div>
+            """
+        }
+        
+        resend.Emails.send(params)
+        return True
+    except Exception as e:
+        print(f"Error sending welcome email: {e}")
+        app_logger.log_error("Failed to send welcome email", exception=e)
+        return False
+
+def send_welcome_email_delayed(user_email, user_name, business_name, delay_minutes=10):
+    """Send welcome email after a delay"""
+    def delayed_send():
+        time.sleep(delay_minutes * 60)  # Convert minutes to seconds
+        send_welcome_email(user_email, user_name, business_name)
+    
+    # Start the email sending in a background thread
+    thread = threading.Thread(target=delayed_send)
+    thread.daemon = True  # Thread will close when main program exits
+    thread.start()
+
 def send_admin_signup_notification(user_email, user_name, business_name, phone, location):
     """Send notification to admin when new user signs up"""
     try:
@@ -118,7 +192,7 @@ def signup():
         password = data.get("password")
         currency = data.get("currency")
 
-        app_logger.sign_auth_attempt(email, request.remote_addr)
+        app_logger.log_auth_attempt(email, request.remote_addr)
 
         Missing_fields = []
 
@@ -138,7 +212,7 @@ def signup():
             Missing_fields.append("business_name")
         
         if Missing_fields:
-            app_logger.sign_auth_failure(email, reason="Empty fields")
+            app_logger.log_auth_failure(email, reason="Empty fields")
             return jsonify({"message": f"{Missing_fields} required"}), 400
         
         existing_email = User.query.filter_by(email=email).first()
@@ -157,7 +231,7 @@ def signup():
         # Generate verification token
         # verification_token = generate_verification_token()
         # token_expiry = datetime.utcnow() + timedelta(hours=24)
-        
+    
         save_user = User(
             firstname=firstname,
             lastname=lastname,
@@ -166,7 +240,7 @@ def signup():
             phone=phone,
             location=location,
             currency=currency,
-            password=hashed_password,
+            password=hashed_password
             # is_verified=False,
             # verification_token=verification_token,
             # verification_token_expiry=token_expiry
@@ -177,9 +251,12 @@ def signup():
         db.session.add(save_user)
         db.session.commit()
         
-
-        # Send admin notification
         user_full_name = f"{firstname} {lastname}"
+
+        # Send welcome email to user with 10 minute delay
+        send_welcome_email_delayed(email, firstname, business_name, delay_minutes=10)
+
+        # Send admin notification immediately
         send_admin_signup_notification(email, user_full_name, business_name, phone, location)
         
 
@@ -190,11 +267,10 @@ def signup():
         #     app_logger.log_error("Verification email failed to send", context=f"User: {email}")
         
         
-        app_logger.sign_auth_success(email)
+        app_logger.log_auth_success(email)
         
         return jsonify({
-            "message": "Account created successfully!",
-            # "message": "Account created successfully! Please check your email to verify your account.",
+            "message": "Account created successfully! Check your email for a welcome message.",
             "email": email
         }), 201
     
